@@ -1,6 +1,15 @@
 <!doctype html>
 <html lang="en">
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ERPMF4T7YG"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+
+        gtag('config', 'G-ERPMF4T7YG');
+    </script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#f6f1e8">
@@ -66,8 +75,57 @@
     .practice-hint{font-size:12px;line-height:1.45;color:#b5c8c3;text-align:center;min-height:18px;margin:11px 0 0;position:relative;z-index:1}
     .settings{margin-top:16px;border-top:1px solid rgba(255,255,255,.13);padding-top:12px;position:relative;z-index:1}.settings summary{cursor:pointer;color:#dbe7e2;font-size:12px;font-weight:800}.settings p{color:#b5c8c3;font-size:12px;line-height:1.5}.settings .control-label{color:#b5c8c3}
     .tips-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:13px}.tip-card{background:#f6f3eb;border-radius:13px;padding:12px 9px;text-align:center}.tip-card div{font-size:21px}.tip-card strong{display:block;font-size:12px;margin:5px 0 3px}.tip-card span{font-size:11px;line-height:1.35;color:var(--muted);display:block}
-    footer{text-align:center;font-size:11px;color:#8e9891;margin-top:23px}.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;pointer-events:none;background:#243b42;color:#fff;padding:11px 15px;border-radius:12px;box-shadow:var(--shadow);font-size:13px;font-weight:800;z-index:10;transition:.2s;max-width:calc(100vw - 32px);text-align:center}.toast.show{opacity:1;transform:translate(-50%,0)}
-    @media(max-width:850px){.layout{grid-template-columns:1fr}.right-stack{position:static}.practice-staff-shell{min-height:0}.practice-panel{order:-1}}
+    .games-hub-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      padding: 9px 14px;
+      border: 1px solid #f2c9dd;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #fff5cf, #ffe8f1);
+      box-shadow: 0 3px 0 #ecc8dc;
+      color: #694978;
+      font-size: 14px;
+      font-weight: 850;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: transform .12s, box-shadow .12s
+    }
+
+    .games-hub-link:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 0 #ecc8dc
+    }
+
+    .games-hub-link:focus-visible {
+      outline: 3px solid #9c8cff;
+      outline-offset: 3px
+    }
+
+    .header-games-link {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 8px
+    }
+      .games-hub-link {
+        padding: 9px 11px
+      }
+
+      .games-hub-label {
+        display: none
+      }
+    /* Footer */
+        footer {
+        text-align: center;
+        padding: 35px 24px;
+        color: #78909c;
+        font-size: 0.9rem;
+        }
+
+        footer strong {
+        color: #455a64;
+        }    @media(max-width:850px){.layout{grid-template-columns:1fr}.right-stack{position:static}.practice-staff-shell{min-height:0}.practice-panel{order:-1}}
     @media(max-width:560px){.app{padding:11px 11px calc(28px + env(safe-area-inset-bottom))}.header-pill{display:none}header{padding:8px 2px 15px}.brand-mark{width:42px;height:42px}.hero{padding:18px;border-radius:20px}.hero-note{display:none}.panel{padding:15px;border-radius:18px}.editor-toolbar{align-items:stretch}.clef-tabs{flex:1}.clef-tab{flex:1;padding:8px 6px}.field{min-width:115px}.action-row .btn{flex:1}.tips-grid{gap:6px}.tip-card{padding:9px 5px}.practice-actions .btn{padding:11px 9px;font-size:12px}}
   </style>
 </head>
@@ -75,7 +133,7 @@
   <main class="app">
     <header>
       <div class="brand"><div class="brand-mark" aria-hidden="true">🎹</div><div><h1>Piano Pal</h1><div class="tagline">Your little music coach</div></div></div>
-      <div class="header-pill">A little practice goes a long way ✨</div>
+      <div class="top-actions"><a class="games-hub-link" href="https://gurutaku.ca/coolgames/" aria-label="Back to Gurutaku Cool Games" title="Back to Gurutaku Cool Games"><span aria-hidden="true">🎮</span><span>More Games</span></a></div>
     </header>
 
     <section class="hero">
@@ -169,7 +227,12 @@
         </section>
       </div>
     </div>
-    <footer>Made for curious little musicians · Your practice path stays on this device</footer>
+        <!-- Footer -->
+        <footer>
+          <strong>🎮 Gurutaku</strong> — Make Learning Fun.
+          <br>
+          © 2026 Gurutaku. All rights reserved.
+        </footer>
   </main>
   <div class="toast" id="toast" role="status"></div>
 
