@@ -8,13 +8,24 @@
       treble:{top:108,bottom:236},bass:{top:356,bottom:484}
     };
     const EDITOR = STAFF;
-    const PRACTICE = STAFF;
+    const PRACTICE = {
+      viewW:1540,viewH:520,left:92,right:1510,stepY:12,centerX:800,
+      treble:{top:88,bottom:184},bass:{top:300,bottom:396},
+      noteRx:39,noteRy:27,noteOffset:21,ledgerLength:84,accidentalOffset:48,accidentalFontSize:54
+    };
+    const PRACTICE_START_X = 145;
+    const PRACTICE_MIN_STEP_X = 110;
+    const PRACTICE_MAX_VISIBLE_EVENTS = 20;
+    const PRACTICE_RIGHT_MARGIN = 70;
+    // Reserve enough logical width for 20 well-spaced events. On especially
+    // wide displays the event spacing expands, never the number shown.
+    const PRACTICE_BASE_W = PRACTICE_START_X + (PRACTICE_MAX_VISIBLE_EVENTS-1)*PRACTICE_MIN_STEP_X + PRACTICE_RIGHT_MARGIN + 55;
+    let practiceColumnGap = PRACTICE_MIN_STEP_X;
     const COLUMN_START = 160;
     const COLUMN_GAP = 112;
     const PAGE_SLOTS = 6;
     const PAGE_SPAN = COLUMN_GAP * PAGE_SLOTS;
     const SNAP_RADIUS = 43;
-    const PRACTICE_START_X = STAFF.viewW - 112;
 
     let events = [];
     let draftNotes = [];
@@ -23,12 +34,19 @@
     let selectedNote = null;
     let selectedHit = null;
     let editorPageIndex = 0;
+    let barLines = [];
+    let barLineMode = false;
+    let practiceModeActive = false;
+    let completedIndices = new Set();
+    let lastWrongSpokenAt = 0;
     let dragging = false;
     let dragMoved = false;
     let pointerStart = null;
     let activePointerId = null;
     let detector = null;
     let isPractising = false;
+    let practiceStarting = false;
+    let practiceStartToken = 0;
     let practiceViewStarted = false;
     let currentIndex = 0;
     let attempt = {lastSoundAt:0,matched:new Set(),candidateFrames:new Map()};
@@ -91,15 +109,17 @@
       const cls=state?` ${state}`:'';
       const glyph=ACCIDENTAL_GLYPH[String(note.accidental)]||'';
       const noteId=Number(note.id)>0?`data-note-id="${note.id}"`:'';
-      const accidentalMarkup = note.accidental===0 ? '' : `<text class="note-accidental${cls}" ${noteId} x="${x-39}" y="${y+13}">${glyph}</text>`;
-      const ledger=ledgerMarkup(x,y,note.clef==='treble'?staff.treble.bottom:staff.bass.bottom,staff.stepY,note.step,'ledger-line',60);
+      const accidentalMarkup = note.accidental===0 ? '' : `<text class="note-accidental${cls}" ${noteId} x="${x-(staff.accidentalOffset||39)}" y="${y+13}"${staff.accidentalFontSize?` style="font-size:${staff.accidentalFontSize}px"`:''}>${glyph}</text>`;
+      const ledger=ledgerMarkup(x,y,note.clef==='treble'?staff.treble.bottom:staff.bass.bottom,staff.stepY,note.step,'ledger-line',staff.ledgerLength||60);
+      const rx=staff.noteRx||25,ry=staff.noteRy||17;
       return `${ledger}${accidentalMarkup}
-        ${state==='preview'?`<ellipse class="preview-ring" cx="${x}" cy="${y}" rx="31" ry="23"/>`:''}
-        <ellipse class="notehead${cls}" ${noteId} cx="${x}" cy="${y}" rx="25" ry="17" transform="rotate(-18 ${x} ${y})"/>`;
+        ${state==='preview'?`<ellipse class="preview-ring" cx="${x}" cy="${y}" rx="${Math.round(rx*1.24)}" ry="${Math.round(ry*1.28)}"/>`:''}
+        <ellipse class="notehead${cls}" ${noteId} cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" transform="rotate(-18 ${x} ${y})"/>`;
     }
-    function visualNoteX(note, notes, columnX) {
+    function visualNoteX(note, notes, columnX, staff=STAFF) {
       const hasAdjacent = notes.some(other=>other!==note&&other.clef===note.clef&&Math.abs(other.step-note.step)===1);
-      let offset = hasAdjacent ? (Math.abs(note.step)%2===0 ? -17 : 17) : 0;
+      const stagger=staff.noteOffset||17;
+      let offset = hasAdjacent ? (Math.abs(note.step)%2===0 ? -stagger : stagger) : 0;
       const samePosition = notes.filter(other=>other.clef===note.clef&&other.step===note.step);
       if(samePosition.length>1){const sameIndex=samePosition.indexOf(note);offset+=(sameIndex-(samePosition.length-1)/2)*24;}
       return columnX+offset;
@@ -107,7 +127,7 @@
     function renderColumnMarkup(entries, columnX, staff=STAFF) {
       if(!entries.length)return '';
       const notes=entries.map(entry=>entry.note);
-      const positions=entries.map(entry=>({note:entry.note,state:entry.state,x:visualNoteX(entry.note,notes,columnX),y:noteY(entry.note,staff)}));
+      const positions=entries.map(entry=>({note:entry.note,state:entry.state,x:visualNoteX(entry.note,notes,columnX,staff),y:noteY(entry.note,staff)}));
       const minY=Math.min(...positions.map(p=>p.y));
       const maxY=Math.max(...positions.map(p=>p.y));
       let html='';
@@ -124,7 +144,7 @@
       const right=Math.max(staff.right,contentW-30);
       let html=`<rect x="0" y="0" width="${contentW}" height="${staff.viewH}" rx="13" fill="${dark?'transparent':'#fffefa'}"/>
         <text class="staff-label" x="${staff.left}" y="42">TREBLE</text>
-        <text class="staff-label" x="${staff.left}" y="548">BASS</text>
+        <text class="staff-label" x="${staff.left}" y="${staff.bass.bottom+64}">BASS</text>
         <text class="clef-mark" x="5" y="${staff.treble.bottom+12}">𝄞</text>
         <text class="clef-mark" x="5" y="${staff.bass.bottom+12}">𝄢</text>`;
       for(let i=0;i<5;i++){
@@ -158,21 +178,37 @@
       viewport.style.overflow='hidden';
     }
     function fitStaffSvg(svg, viewport, contentW, staff=STAFF) {
-      const available=Math.max(240,viewport.clientWidth||staff.viewW);
+      // Keep the growing practice score entirely inside its own horizontal
+      // scroller. Never let the score's intrinsic width contribute to the
+      // document width (Safari on small iPhones can otherwise auto-scale the
+      // page when another page of notes is added).
+      viewport.style.width='100%';
+      viewport.style.maxWidth='100%';
+      viewport.style.minWidth='0';
+      viewport.style.display='block';
+      viewport.style.overflowX='auto';
+      viewport.style.overflowY='hidden';
+      const rectWidth=viewport.getBoundingClientRect?.().width||0;
+      const measured=rectWidth||viewport.clientWidth||0;
+      const available=Math.max(1,Math.floor(measured||Math.min(staff.viewW,window.innerWidth||staff.viewW)));
       const scale=available/staff.viewW;
       const width=contentW*scale;
       const height=staff.viewH*scale;
       svg.setAttribute('viewBox',`0 0 ${contentW} ${staff.viewH}`);
       svg.setAttribute('width',String(width));
       svg.setAttribute('height',String(height));
+      svg.style.display='block';
       svg.style.width=`${width}px`;
       svg.style.height=`${height}px`;
+      svg.style.maxWidth='none';
+      svg.style.minWidth='0';
+      svg.style.flex='none';
       svg.dataset.scale=String(scale);
       svg.dataset.contentWidth=String(contentW);
     }
     function editorPageOffset() { return editorPageIndex * PAGE_SPAN; }
     function editorLastUsedPage() {
-      const xs=[...events.map(ev=>ev.x),...draftNotes.map(note=>note.x),...(selectedNote?[selectedNote.x]:[])];
+      const xs=[...events.map(ev=>ev.x),...draftNotes.map(note=>note.x),...barLines,...(selectedNote?[selectedNote.x]:[])];
       return xs.length?Math.max(0,Math.floor((Math.max(...xs)-COLUMN_START)/PAGE_SPAN)):0;
     }
     function updateEditorPageNav() {
@@ -204,6 +240,12 @@
       const pageMax=pageOffset+COLUMN_START+(PAGE_SLOTS-1)*COLUMN_GAP+1;
       let html=drawGrandStaffBase(STAFF.viewW,EDITOR,false);
       const columns=new Map();
+      barLines.forEach(barX=>{
+        const localX=barX-pageOffset;
+        if(localX>=70&&localX<=STAFF.viewW-18){
+          html+=`<line class="bar-line" data-bar-x="${barX}" x1="${localX}" y1="${EDITOR.treble.top-9}" x2="${localX}" y2="${EDITOR.bass.bottom+9}"/>`;
+        }
+      });
       const addToColumn=(note,state)=>{
         if(note.x<pageMin||note.x>pageMax)return;
         const x=Math.round(note.x-pageOffset);
@@ -221,8 +263,10 @@
       }
       svg.innerHTML=html;
       fitEditorStaffSvg(svg,viewport,EDITOR);
-      $('addBtn').disabled=draftNotes.length===0;
-      $('clearNotesBtn').disabled=events.length===0&&!draftNotes.length;
+      $('addBtn').disabled=events.length===0&&!draftNotes.length;
+      $('clearNotesBtn').disabled=events.length===0&&!draftNotes.length&&!barLines.length;
+      $('barLineBtn').setAttribute('aria-pressed',String(barLineMode));
+      $('barLineBtn').textContent=barLineMode?'Tap a gap on the staff…':'＋ Add bar line';
       $('selectionDot').classList.toggle('ready',draftNotes.length>0||!!selectedNote);
       updateEditorPageNav();
     }
@@ -270,16 +314,18 @@
     function resetAttempt(){attempt={lastSoundAt:0,matched:new Set(),candidateFrames:new Map()};}
     function resetCarryover(){carryoverMidis.clear();carryoverReleaseFrames.clear();}
     function updateProgress() {
-      $('progressCount').textContent=`${Math.min(currentIndex,events.length)} / ${events.length}`;
-      $('progressFill').style.width=events.length?`${Math.min(100,currentIndex/events.length*100)}%`:'0%';
+      const done=Math.min(completedIndices.size,events.length);
+      $('progressCount').textContent=`${done} / ${events.length}`;
+      $('progressFill').style.width=events.length?`${Math.min(100,done/events.length*100)}%`:'0%';
     }
-    function resetPractice() {
-      currentIndex=0;practiceViewStarted=false;resetAttempt();resetCarryover();wrongFlash=[];clearTimeout(wrongFlashTimer);
-      updateProgress();renderPracticeStaff();
-      $('practiceViewport').scrollLeft=0;
-      $('startBtn').textContent='🎹 Start practice';
+    function resetPractice(renderStaff=true) {
+      currentIndex=0;practiceViewStarted=false;completedIndices.clear();resetAttempt();resetCarryover();wrongFlash=[];clearTimeout(wrongFlashTimer);
+      updateProgress();
+      if(renderStaff&&practiceModeActive)renderPracticeStaff();
+      if(practiceModeActive)$('practiceViewport').scrollLeft=0;
+      $('startBtn').textContent='Start';
       $('startBtn').disabled=!events.length||isPractising;
-      $('practiceHint').textContent=events.length?'Scroll to preview your music, then start when ready.':'Add notes to begin.';
+      $('practiceHint').textContent=events.length?'Scroll through the music and tap a note or chord to choose where to start.':'Add notes to begin.';
     }
     function addDraftNotes() {
       if(!draftNotes.length)return;
@@ -296,9 +342,8 @@
       });
       events=events.filter(ev=>ev.notes.length).sort((a,b)=>a.x-b.x);
       draftNotes=[];selectedNote=null;selectedHit=null;
-      resetPractice();drawEditorStaff();renderPracticeStaff();
-      $('editorHint').textContent='Notes added. Use the arrows to move between staff pages, or start playing the sequence.';
-      showToast('Notes added to the grand staff.');
+      resetPractice(false);drawEditorStaff();
+      $('editorHint').textContent='Music ready. Press Ready to open the landscape practice screen.';
     }
     function removeNoteHit(hit) {
       if(isPractising)stopPractice(false);
@@ -317,58 +362,177 @@
       if(duplicate){showToast('That note is already in this chord.');return;}
       note.id=nextNoteId++;
       draftNotes.push(note);
-      $('editorHint').textContent=`${draftNotes.length} new ${draftNotes.length===1?'note':'notes'} ready. Add notes when you are finished.`;
+      $('editorHint').textContent=`${draftNotes.length} new ${draftNotes.length===1?'note':'notes'} placed. Add more notes or bar lines, then press Ready.`;
     }
     function drawPracticeBase(contentW) {
       return drawGrandStaffBase(contentW,PRACTICE,true);
     }
-    function practiceOffset() {
-      if(!practiceViewStarted||!events.length)return 0;
-      return PRACTICE_START_X-events[0].x;
+    function practiceEventX(index) {
+      return PRACTICE_START_X + index*practiceColumnGap;
     }
-    function practiceEventX(event) { return event.x+practiceOffset(); }
+    function practiceBarX(barX) {
+      if(!events.length)return PRACTICE_START_X;
+      const rightIndex=events.findIndex(ev=>ev.x>barX);
+      if(rightIndex===0)return PRACTICE_START_X-.5*practiceColumnGap;
+      if(rightIndex<0)return PRACTICE_START_X+(events.length-.5)*practiceColumnGap;
+      const leftIndex=rightIndex-1;
+      const leftX=events[leftIndex].x,rightX=events[rightIndex].x;
+      const fraction=Math.max(0,Math.min(1,(barX-leftX)/(rightX-leftX)));
+      return PRACTICE_START_X+(leftIndex+fraction)*practiceColumnGap;
+    }
+    function getPracticeLayout(viewport) {
+      const width=Math.max(1,viewport.clientWidth||window.innerWidth||800);
+      const height=Math.max(1,viewport.clientHeight||220);
+      // The staff height and 20-event logical width jointly determine scale.
+      // If height is the limiting dimension on a very wide screen, increase
+      // the horizontal pitch between events so a 21st chord cannot enter view.
+      const scale=Math.min(width/PRACTICE_BASE_W,height/PRACTICE.viewH);
+      const visibleUnits=width/scale;
+      // A gap of at least one nineteenth of the viewport's logical width
+      // prevents 21 event centres (and their noteheads) fitting at any scroll
+      // offset, not just when the score is at its far-left starting position.
+      const gapForTwenty=visibleUnits/(PRACTICE_MAX_VISIBLE_EVENTS-1);
+      practiceColumnGap=events.length>=PRACTICE_MAX_VISIBLE_EVENTS
+        ? Math.max(PRACTICE_MIN_STEP_X,gapForTwenty)
+        : PRACTICE_MIN_STEP_X;
+      const lastEventX=events.length?PRACTICE_START_X+(events.length-1)*practiceColumnGap:PRACTICE_START_X;
+      // For scores up to 20 events, keep the staff filling the viewport. Longer
+      // scores extend the SVG inside this scroller, never the document itself.
+      const contentW=Math.ceil(Math.max(visibleUnits,lastEventX+PRACTICE_RIGHT_MARGIN)/10)*10;
+      return {width,height,scale,contentW};
+    }
+    function fitPracticeSvg(svg,viewport,layout) {
+      const {width,scale,contentW}=layout;
+      const pixelW=contentW*scale;
+      const pixelH=PRACTICE.viewH*scale;
+      svg.setAttribute('viewBox',`0 0 ${contentW} ${PRACTICE.viewH}`);
+      svg.setAttribute('width',String(pixelW));svg.setAttribute('height',String(pixelH));
+      svg.style.display='block';svg.style.width=`${pixelW}px`;svg.style.height=`${pixelH}px`;
+      svg.style.maxWidth='none';svg.style.minWidth='0';svg.style.flex='none';
+      svg.style.marginLeft=pixelW<width?'auto':'0';svg.style.marginRight=pixelW<width?'auto':'0';
+      svg.dataset.scale=String(scale);svg.dataset.contentWidth=String(contentW);
+      svg.dataset.columnGap=String(practiceColumnGap);svg.dataset.maxVisible=String(PRACTICE_MAX_VISIBLE_EVENTS);
+      viewport.style.width='100%';viewport.style.maxWidth='100%';viewport.style.minWidth='0';
+      viewport.style.overflowX=contentW*scale>width+1?'auto':'hidden';
+    }
     function renderPracticeStaff() {
       const svg=$('practiceStaff');
       const viewport=$('practiceViewport');
-      const offset=practiceOffset();
-      const xs=events.map(ev=>ev.x+offset);
-      const maxX=xs.length?Math.max(...xs):COLUMN_START;
-      const contentW=Math.max(STAFF.viewW,Math.ceil((maxX+95)/40)*40);
+      if(!practiceModeActive){svg.innerHTML='';return;}
+      const layout=getPracticeLayout(viewport);
+      const contentW=layout.contentW;
       let html=drawPracticeBase(contentW);
+      // Bar lines are mapped to the gap between the notes they separate.
+      barLines.forEach(bar=>{
+        const x=practiceBarX(bar);
+        html+=`<line class="bar-line" x1="${x}" y1="${PRACTICE.treble.top-5}" x2="${x}" y2="${PRACTICE.bass.bottom+5}" style="stroke:#e2eee8;stroke-width:3.5"/>`;
+      });
       events.forEach((ev,index)=>{
-        const state=practiceViewStarted?(index<currentIndex?'completed':index===currentIndex?'current':'future'):'future';
-        html+=renderNoteGroup(ev.notes,practiceEventX(ev),state,null,PRACTICE);
+        const x=practiceEventX(index);
+        const state=completedIndices.has(index)?'completed':index===currentIndex?'current':'future';
+        html+=`<g class="practice-event ${index===currentIndex?'selected':''}" data-event-index="${index}">
+          <rect class="practice-event-zone" x="${x-practiceColumnGap/2}" y="52" width="${practiceColumnGap}" height="${PRACTICE.bass.bottom+60-52}"/>
+          ${renderNoteGroup(ev.notes,x,state,null,PRACTICE)}
+        </g>`;
       });
       if(wrongFlash.length&&events[currentIndex]){
-        const x=practiceEventX(events[currentIndex]);
+        const x=practiceEventX(currentIndex);
         const wrong=wrongFlash.map(m=>midiSpelling(m,m>=60?'treble':'bass'));
         html+=renderNoteGroup(wrong,x,'wrong',null,PRACTICE);
       }
       if(!events.length){
-        html+=`<text class="staff-hint" x="${STAFF.viewW/2}" y="${STAFF.viewH/2}" text-anchor="middle" style="font-size:22px;font-weight:850">Add notes to begin</text>`;
-      }else if(practiceViewStarted&&currentIndex>=events.length){
-        html+=`<text class="staff-hint" x="${Math.max(STAFF.viewW/2,maxX)}" y="${STAFF.viewH/2}" text-anchor="middle" style="font-size:22px;font-weight:850">All done! ✨</text>`;
+        html+=`<text class="staff-hint" x="${PRACTICE.viewW/2}" y="${PRACTICE.viewH/2}" text-anchor="middle" style="font-size:24px;font-weight:850">Add notes to begin</text>`;
+      }else if(currentIndex>=events.length){
+        html+=`<text class="staff-hint" x="${Math.max(PRACTICE.viewW/2,PRACTICE_START_X)}" y="${PRACTICE.viewH/2}" text-anchor="middle" style="font-size:24px;font-weight:850">All done! ✨</text>`;
       }
       svg.innerHTML=html;
-      fitStaffSvg(svg,viewport,contentW,PRACTICE);
-      if(practiceViewStarted)requestAnimationFrame(scrollPracticeToCurrent);
+      fitPracticeSvg(svg,viewport,layout);
+      if(isPractising)requestAnimationFrame(scrollPracticeToCurrent);
     }
     function scrollPracticeToCurrent() {
-      if(!practiceViewStarted||!events.length)return;
+      if(!practiceModeActive||!events.length)return;
       const viewport=$('practiceViewport');
-      const svg=$('practiceStaff');
-      const scale=Number(svg.dataset.scale)||1;
-      const current=events[Math.min(currentIndex,events.length-1)];
-      if(!current)return;
-      const x=practiceEventX(current)*scale;
-      const rightPad=Math.min(58,viewport.clientWidth*.14);
+      const scale=Number($('practiceStaff').dataset.scale)||1;
+      const x=practiceEventX(Math.min(currentIndex,events.length-1))*scale;
+      const rightPad=Math.min(42,viewport.clientWidth*.07);
       const targetScroll=Math.max(0,x-(viewport.clientWidth-rightPad));
       viewport.scrollLeft=targetScroll;
     }
+    function selectPracticeEvent(index) {
+      if(!practiceModeActive||isPractising||practiceStarting||index<0||index>=events.length)return;
+      currentIndex=index;
+      for(const done of [...completedIndices])if(done>=index)completedIndices.delete(done);
+      resetAttempt();resetCarryover();wrongFlash=[];clearTimeout(wrongFlashTimer);
+      $('wrongNoteMessage').hidden=true;
+      updateProgress();renderPracticeStaff();
+      $('practiceHint').textContent=`Starting point selected: ${index+1} of ${events.length}. Press Start when ready.`;
+    }
+    function addBarLineFromPoint(point) {
+      const minGapX=COLUMN_START-COLUMN_GAP/2;
+      const maxGapX=COLUMN_START+(PAGE_SLOTS-1.5)*COLUMN_GAP;
+      if(point.x<minGapX-4||point.x>maxGapX+4){showToast('Tap a space between the note columns.');return;}
+      const pageOffset=editorPageOffset();
+      const target=Math.max(-1,Math.min(PAGE_SLOTS-2,Math.round((point.x-COLUMN_START)/COLUMN_GAP-.5)));
+      const barX=pageOffset+COLUMN_START+(target+.5)*COLUMN_GAP;
+      if(barLines.some(x=>Math.abs(x-barX)<10)){showToast('There is already a bar line in that space.');return;}
+      barLines.push(barX);barLines.sort((a,b)=>a-b);
+      barLineMode=false;drawEditorStaff();
+      $('editorHint').textContent='Bar line added. It separates the notes on either side.';
+    }
+    function enterPracticeMode() {
+      if(!events.length)return;
+      practiceModeActive=true;practiceViewStarted=true;
+      completedIndices.clear();currentIndex=0;resetAttempt();resetCarryover();wrongFlash=[];
+      $('wrongNoteMessage').hidden=true;
+      const panel=$('practicePanel');
+      document.documentElement.classList.add('practice-mode');
+      panel.classList.add('practice-fullscreen');
+      $('startBtn').disabled=false;$('startBtn').textContent='Start';$('stopBtn').disabled=true;
+      $('practiceHint').textContent='Scroll through the music and tap a note or chord to choose where to start.';
+      // Use native element fullscreen where available (desktop and supported tablets).
+      // iPhone Safari uses this fixed-screen PWA fallback plus a physical rotation.
+      try{
+        const request=panel.requestFullscreen||panel.webkitRequestFullscreen;
+        if(request&&(document.fullscreenEnabled||panel.webkitRequestFullscreen)){
+          Promise.resolve(request.call(panel,{navigationUI:'hide'})).then(()=>{
+            try{if(practiceModeActive)screen.orientation?.lock?.('landscape')?.catch?.(()=>{});}catch(err){/* optional */}
+          }).catch(()=>{
+            try{if(practiceModeActive)screen.orientation?.lock?.('landscape')?.catch?.(()=>{});}catch(err){/* optional */}
+          });
+        }else{
+          try{if(practiceModeActive)screen.orientation?.lock?.('landscape')?.catch?.(()=>{});}catch(err){/* not supported on iPhone Safari */}
+        }
+      }catch(err){/* CSS full-screen fallback remains active */}
+      renderPracticeStaff();updateProgress();
+      requestAnimationFrame(()=>{$('practiceViewport').scrollLeft=0;});
+    }
+    async function exitPracticeMode() {
+      practiceStartToken++;practiceStarting=false;
+      if(isPractising)stopPractice(false);
+      else if(detector){try{detector.stop();}catch(err){}detector=null;}
+      practiceModeActive=false;practiceViewStarted=false;
+      $('practicePanel').classList.remove('practice-fullscreen');
+      document.documentElement.classList.remove('practice-mode');
+      try{screen.orientation?.unlock?.();}catch(err){/* optional */}
+      if(document.fullscreenElement){try{await document.exitFullscreen();}catch(err){/* already exited */}}
+      else if(document.webkitFullscreenElement&&document.webkitExitFullscreen){try{document.webkitExitFullscreen();}catch(err){/* optional */}}
+      $('wrongNoteMessage').hidden=true;
+      $('practiceHint').textContent='Practice closed. Make any changes, then press Ready to play again.';
+      $('startBtn').disabled=!events.length;
+      renderPracticeStaff();
+    }
     function renderAll() { drawEditorStaff();renderPracticeStaff();updateProgress(); }
     function showWrong(midiValues) {
-      wrongFlash=[...new Set(midiValues)];renderPracticeStaff();clearTimeout(wrongFlashTimer);
-      wrongFlashTimer=setTimeout(()=>{wrongFlash=[];renderPracticeStaff();},620);
+      wrongFlash=[...new Set(midiValues)];
+      const message=$('wrongNoteMessage');message.hidden=false;message.textContent='Wrong note!';
+      renderPracticeStaff();
+      const now=Date.now();
+      if(now-lastWrongSpokenAt>1300&&'speechSynthesis'in window&&'SpeechSynthesisUtterance'in window){
+        lastWrongSpokenAt=now;
+        try{window.speechSynthesis.cancel();const utterance=new SpeechSynthesisUtterance('Wrong note!');utterance.rate=1.08;utterance.pitch=1.05;utterance.volume=.85;window.speechSynthesis.speak(utterance);}catch(err){/* visual feedback still appears */}
+      }
+      clearTimeout(wrongFlashTimer);
+      wrongFlashTimer=setTimeout(()=>{wrongFlash=[];message.hidden=true;renderPracticeStaff();},850);
     }
 
     function closestExpected(actual,expected,tolerance) {
@@ -453,6 +617,7 @@
       if(wrong.length)showWrong(wrong);
       if(attempt.matched.size>=expected.length){
         const completedEvent=target;
+        completedIndices.add(currentIndex);
         currentIndex++;
         rememberTrailingPitches(completedEvent,events[currentIndex],heardSet);
         resetAttempt();wrongFlash=[];clearTimeout(wrongFlashTimer);
@@ -465,33 +630,38 @@
       }
     }
     async function startPractice() {
-      if(!events.length)return;
+      if(!events.length||practiceStarting||isPractising)return;
+      practiceStarting=true;
+      const startToken=++practiceStartToken;
       try{
         $('startBtn').disabled=true;$('startBtn').textContent='Starting…';
         const {create}=await import('https://cdn.jsdelivr.net/npm/@markusstrasser/pitchplease@3.1.0/pitchplease.js');
+        if(startToken!==practiceStartToken||!practiceModeActive)return;
         detector=create({model:'piano',threshold:{on:.6,off:.36},stabilityFrames:2,clearAfterMs:180,
           onNotes:(notes)=>comparePlayed(notes),
           onError:err=>{console.error(err);showToast(`Microphone issue: ${err.message||err.code||'check permission'}`);}
         });
         const ok=await detector.start();
+        if(startToken!==practiceStartToken||!practiceModeActive){try{detector?.stop?.();}catch(err){}detector=null;practiceStarting=false;return;}
         if(!ok)throw new Error('The microphone could not start. Check Safari permission and try again.');
-        isPractising=true;resetAttempt();resetCarryover();
-        $('startBtn').textContent='Practice running';$('startBtn').disabled=true;$('stopBtn').disabled=false;
-        $('practiceHint').textContent='Play the note or chord at the right side of the staff.';
+        practiceStarting=false;isPractising=true;resetAttempt();resetCarryover();
+        $('startBtn').textContent='Playing';$('startBtn').disabled=true;$('stopBtn').disabled=false;
+        $('practiceHint').textContent='Play the highlighted note or chord at the right side of the staff.';
         renderPracticeStaff();updateProgress();
         const monitor=()=>{if(!isPractising||!detector)return;if(detector.stats?.cpuLoad>.88&&detector.model==='piano'){detector.setModel('fast').catch(()=>{});}};
         clearInterval(cpuMonitorTimer);cpuMonitorTimer=setInterval(monitor,2500);
       }catch(err){
-        console.error(err);detector?.stop?.();detector=null;isPractising=false;practiceViewStarted=false;
-        $('startBtn').disabled=!events.length;$('startBtn').textContent='🎹 Start practice';$('stopBtn').disabled=true;
+        if(startToken!==practiceStartToken)return;
+        practiceStarting=false;console.error(err);detector?.stop?.();detector=null;isPractising=false;practiceViewStarted=true;
+        $('startBtn').disabled=!events.length;$('startBtn').textContent='Start';$('stopBtn').disabled=true;
         $('practiceHint').textContent='';renderPracticeStaff();showToast(err.message||'Could not start the microphone.');
       }
     }
     function stopPractice(completed=false) {
-      clearInterval(cpuMonitorTimer);cpuMonitorTimer=null;
+      clearInterval(cpuMonitorTimer);cpuMonitorTimer=null;practiceStarting=false;
       if(detector){try{detector.stop();}catch(err){console.warn(err);}detector=null;}
-      isPractising=false;$('startBtn').disabled=!events.length;$('startBtn').textContent=completed?'Practice again':'🎹 Start practice';$('stopBtn').disabled=true;
-      if(!completed)$('practiceHint').textContent='Practice paused. Start again whenever you are ready.';
+      isPractising=false;$('startBtn').disabled=!events.length;$('startBtn').textContent=completed?'Play again':'Start';$('stopBtn').disabled=true;
+      if(!completed)$('practiceHint').textContent='Paused. Scroll and tap a note or chord to choose a new starting point, or press Start to continue.';
       updateProgress();renderPracticeStaff();
     }
 
@@ -502,6 +672,13 @@
       if(event.button!==undefined&&event.button!==0)return;
       if(dragging||isPractising)return;
       const point=svgPoint(event,composerSurface);
+      const barNode=event.target.closest?.('[data-bar-x]');
+      if(barNode){
+        const x=Number(barNode.getAttribute('data-bar-x'));
+        barLines=barLines.filter(value=>Math.abs(value-x)>1);
+        drawEditorStaff();$('editorHint').textContent='Bar line removed.';return;
+      }
+      if(barLineMode){addBarLineFromPoint(point);return;}
       selectedHit=findNoteHitFromEvent(event);
       pointerStart={x:event.clientX,y:event.clientY};
       dragMoved=false;dragging=true;activePointerId=event.pointerId;
@@ -560,33 +737,48 @@
       if(selectedNote)selectedNote.accidental=Number($('accidentalSelect').value);
       drawEditorStaff();
     });
-    $('addBtn').addEventListener('click',event=>{
-      // Keep Safari from retaining focus on a small button after the editor
-      // redraws (a focus/scroll adjustment can look like a page zoom on iOS).
-      event.preventDefault();
-      const pageX=window.scrollX, pageY=window.scrollY;
+    $('barLineBtn').addEventListener('click',()=>{
+      barLineMode=!barLineMode;
+      $('editorHint').textContent=barLineMode?'Tap one of the spaces between note columns to place a bar line. Tap an existing bar line to remove it.':'Drag on the staff to place notes.';
+      drawEditorStaff();
+    });
+    $('addBtn').addEventListener('click',()=>{
+      if(!events.length&&!draftNotes.length)return;
       addDraftNotes();
-      requestAnimationFrame(()=>{
-        if(document.activeElement===$('addBtn'))$('addBtn').blur();
-        if(Math.abs(window.scrollX-pageX)>1||Math.abs(window.scrollY-pageY)>1){
-          window.scrollTo({left:pageX,top:pageY,behavior:'instant'});
-        }
-      });
+      if(!events.length)return;
+      barLineMode=false;drawEditorStaff();enterPracticeMode();
     });
     $('clearNotesBtn').addEventListener('click',()=>{
       if(isPractising)stopPractice(false);
-      events=[];draftNotes=[];selectedNote=null;selectedHit=null;editorPageIndex=0;
+      events=[];draftNotes=[];barLines=[];selectedNote=null;selectedHit=null;editorPageIndex=0;barLineMode=false;
       resetPractice();drawEditorStaff();renderPracticeStaff();
       $('editorHint').textContent='Staff cleared. Drag on either clef to start again.';
     });
     $('startBtn').addEventListener('click',()=>{
       if(isPractising||!events.length)return;
-      currentIndex=0;practiceViewStarted=true;resetAttempt();resetCarryover();wrongFlash=[];
+      if(currentIndex>=events.length){completedIndices.clear();currentIndex=0;}
+      resetAttempt();resetCarryover();wrongFlash=[];
+      $('wrongNoteMessage').hidden=true;
       renderPracticeStaff();requestAnimationFrame(scrollPracticeToCurrent);startPractice();
     });
     $('stopBtn').addEventListener('click',()=>stopPractice(false));
-    window.addEventListener('resize',()=>{drawEditorStaff();renderPracticeStaff();});
-    window.addEventListener('orientationchange',()=>setTimeout(()=>{drawEditorStaff();renderPracticeStaff();},250));
+    $('exitPracticeBtn').addEventListener('click',()=>exitPracticeMode());
+    $('practiceStaff').addEventListener('click',event=>{
+      const node=event.target.closest?.('[data-event-index]');
+      if(!node)return;
+      selectPracticeEvent(Number(node.getAttribute('data-event-index')));
+    });
+    const handleFullscreenChange=()=>{
+      const nativeFullscreen=document.fullscreenElement||document.webkitFullscreenElement;
+      if(practiceModeActive&&!nativeFullscreen&&$('practicePanel').classList.contains('practice-fullscreen')){
+        // Browser Escape / system fullscreen exit: return to the editor cleanly.
+        exitPracticeMode();
+      }
+    };
+    document.addEventListener('fullscreenchange',handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange',handleFullscreenChange);
+    window.addEventListener('resize',()=>{drawEditorStaff();if(practiceModeActive)renderPracticeStaff();});
+    window.addEventListener('orientationchange',()=>setTimeout(()=>{drawEditorStaff();if(practiceModeActive)renderPracticeStaff();},250));
     if('serviceWorker'in navigator&&location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(err=>console.warn('Service worker:',err)));
 
     drawEditorStaff();renderPracticeStaff();updateProgress();
