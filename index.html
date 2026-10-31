@@ -193,6 +193,7 @@
     let chordDraft = [];
     let chordX = null;
     let dragging = false;
+    let activePointerId = null;
     let detector = null;
     let isPractising = false;
     let currentIndex = 0;
@@ -271,10 +272,14 @@
       for(let i=0;i<5;i++){const y=EDITOR.top+i*18;html+=`<line class="staff-line" x1="${EDITOR.left}" y1="${y}" x2="${EDITOR.right}" y2="${y}"/>`;}
       html+=`<line class="staff-separator" x1="${EDITOR.left}" y1="248" x2="${EDITOR.right}" y2="248"/>
         <text class="staff-hint" x="${EDITOR.left}" y="274">Drag up for higher notes · drag down for lower notes</text>`;
+      // Keep the in-progress note visible in both single-note and chord modes.
+      // In chord mode the committed draft notes share one x-position, while the
+      // live preview remains visible as the player drags to choose its pitch.
       const shown=[...chordDraft];
-      if(selectedNote && !chordMode) shown.push(selectedNote);
+      if(selectedNote) shown.push(selectedNote);
       shown.forEach((note,index)=>{
-        const x=chordMode&&chordX!==null?chordX:(note.x||EDITOR.centerX);
+        const isLivePreview = note===selectedNote;
+        const x=chordMode&&chordX!==null&&!isLivePreview?chordX:(note.x||EDITOR.centerX);
         const displayNote=note.clef===activeClef?note:{...midiSpelling(note.midi,activeClef),x};
         const y=EDITOR.bottom-displayNote.step*EDITOR.stepY;
         const state=chordDraft.includes(note)?'draft':'preview';
@@ -522,32 +527,39 @@
       updateProgress();
     }
 
-    // Pointer events are attached to the stable wrapper, so the SVG can redraw during a drag.
+    // Pointer events stay on the stable wrapper while the SVG redraws. This is
+    // important on touch screens: replacing SVG children during a drag must not
+    // interrupt the pointer stream or hide the live notehead preview.
     const composerSurface=$('composerSurface');
     composerSurface.addEventListener('pointerdown',event=>{
       if(event.button!==undefined&&event.button!==0)return;
+      if(dragging)return; // Ignore a second finger until the active drag ends.
       const note=pickNote(event);if(!note)return;
-      event.preventDefault();dragging=true;composerSurface.setPointerCapture?.(event.pointerId);
+      event.preventDefault();dragging=true;activePointerId=event.pointerId;
+      try{composerSurface.setPointerCapture(event.pointerId);}catch(err){/* capture is optional */}
       selectedNote=note;
-      if(chordMode){
-        if(chordX===null)chordX=note.x;
-        selectedNote={...note,x:chordX};
-      }
       drawEditorStaff();
     });
     composerSurface.addEventListener('pointermove',event=>{
-      if(!dragging)return;
+      if(!dragging||event.pointerId!==activePointerId)return;
       const note=pickNote(event);if(!note)return;
-      selectedNote=chordMode?{...note,x:chordX??note.x}:note;
+      // Keep chord notes aligned in one column after the first note is placed;
+      // the live notehead still follows the finger vertically with clear preview.
+      selectedNote=chordMode&&chordX!==null?{...note,x:chordX}:note;
       drawEditorStaff();
     });
     function releaseStaffPointer(event){
-      if(!dragging)return;dragging=false;
+      if(!dragging||event.pointerId!==activePointerId)return;
+      dragging=false;activePointerId=null;
       if(chordMode&&selectedNote){
-        const duplicate=chordDraft.some(n=>n.midi===selectedNote.midi&&n.clef===selectedNote.clef);
-        if(!duplicate)chordDraft.push({...selectedNote,x:chordX??selectedNote.x});
+        // The first released note establishes the chord column. Later notes snap
+        // to it, while their pitch is selected independently by dragging.
+        if(chordX===null)chordX=selectedNote.x;
+        const placedNote={...selectedNote,x:chordX};
+        const duplicate=chordDraft.some(n=>n.midi===placedNote.midi&&n.clef===placedNote.clef);
+        if(!duplicate)chordDraft.push(placedNote);
         selectedNote=null;
-        $('editorHint').textContent=`${chordDraft.length} chord ${chordDraft.length===1?'note':'notes'} placed. Add another or add the chord.`;
+        $('editorHint').textContent=`${chordDraft.length} chord ${chordDraft.length===1?'note':'notes'} placed. Drag to add another note, or add the chord.`;
       }else if(selectedNote){
         $('editorHint').textContent=`${formatNote(selectedNote)} selected. Choose Add note to place it in your music path.`;
       }
@@ -555,6 +567,7 @@
     }
     composerSurface.addEventListener('pointerup',releaseStaffPointer);
     composerSurface.addEventListener('pointercancel',releaseStaffPointer);
+    composerSurface.addEventListener('lostpointercapture',releaseStaffPointer);
 
     $('trebleTab').addEventListener('click',()=>{activeClef='treble';selectedNote=null;renderClefTabs();drawEditorStaff();});
     $('bassTab').addEventListener('click',()=>{activeClef='bass';selectedNote=null;renderClefTabs();drawEditorStaff();});
