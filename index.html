@@ -82,11 +82,12 @@
     .page-arrow:before{content:"";display:block;width:0;height:0;border-top:6px solid transparent;border-bottom:6px solid transparent}
     .page-arrow.previous:before{border-right:8px solid currentColor;margin-left:-2px}
     .page-arrow.next:before{border-left:8px solid currentColor;margin-right:-2px}
-    .staff-viewport,.practice-viewport{width:100%;min-width:0;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:thin;scrollbar-color:#b9c8bf transparent}
-    .staff-viewport{overflow:hidden;touch-action:none}
+    .staff-viewport,.practice-viewport{width:100%;max-width:100%;min-width:0;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:thin;scrollbar-color:#b9c8bf transparent;overflow-anchor:none}
+    .staff-viewport{display:block;position:relative;overflow:hidden;touch-action:none;contain:layout paint;isolation:isolate}
     .practice-viewport{overflow-x:auto}
     #composerStaff,#practiceStaff{display:block;max-width:none;min-width:0;flex:none;height:auto;overflow:visible}
-    #composerStaff{width:100%;max-width:100%;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;cursor:crosshair}
+    #composerStaff{width:100% !important;height:auto !important;max-width:100% !important;min-width:0 !important;flex:0 1 auto;aspect-ratio:760 / 580;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;cursor:crosshair;overflow:hidden}
+    .editor-staff-shell{width:100%;max-width:100%;min-width:0;overflow:hidden;overflow-anchor:none}
     #composerStaff .staff-line{stroke-width:2.4}
     #composerStaff .clef-mark{font-size:132px}
     #practiceStaff{touch-action:pan-x}

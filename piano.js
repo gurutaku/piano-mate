@@ -137,17 +137,25 @@
       return html;
     }
     function fitEditorStaffSvg(svg, viewport, staff=STAFF) {
-      // Keep the editor on a fixed-size page. More notes create more pages,
-      // never a wider SVG that can change the apparent zoom on mobile Safari.
-      const available=Math.max(1,viewport.clientWidth||staff.viewW);
-      const scale=available/staff.viewW;
+      // The composer is always one fixed-width logical page. Never write a
+      // content-derived pixel width/height: Safari can treat changing SVG
+      // intrinsic dimensions as a viewport resize and visually zoom the page.
       svg.setAttribute('viewBox',`0 0 ${staff.viewW} ${staff.viewH}`);
+      svg.setAttribute('preserveAspectRatio','xMidYMid meet');
       svg.setAttribute('width',String(staff.viewW));
       svg.setAttribute('height',String(staff.viewH));
-      svg.style.width='100%';
-      svg.style.height='auto';
-      svg.dataset.scale=String(scale);
+      svg.style.setProperty('display','block');
+      svg.style.setProperty('width','100%','important');
+      svg.style.setProperty('height','auto','important');
+      svg.style.setProperty('max-width','100%','important');
+      svg.style.setProperty('min-width','0','important');
+      svg.style.setProperty('aspect-ratio',`${staff.viewW} / ${staff.viewH}`);
       svg.dataset.contentWidth=String(staff.viewW);
+      // Keep the clipping viewport tied to its parent, not to SVG content.
+      viewport.style.width='100%';
+      viewport.style.maxWidth='100%';
+      viewport.style.minWidth='0';
+      viewport.style.overflow='hidden';
     }
     function fitStaffSvg(svg, viewport, contentW, staff=STAFF) {
       const available=Math.max(240,viewport.clientWidth||staff.viewW);
@@ -552,7 +560,19 @@
       if(selectedNote)selectedNote.accidental=Number($('accidentalSelect').value);
       drawEditorStaff();
     });
-    $('addBtn').addEventListener('click',addDraftNotes);
+    $('addBtn').addEventListener('click',event=>{
+      // Keep Safari from retaining focus on a small button after the editor
+      // redraws (a focus/scroll adjustment can look like a page zoom on iOS).
+      event.preventDefault();
+      const pageX=window.scrollX, pageY=window.scrollY;
+      addDraftNotes();
+      requestAnimationFrame(()=>{
+        if(document.activeElement===$('addBtn'))$('addBtn').blur();
+        if(Math.abs(window.scrollX-pageX)>1||Math.abs(window.scrollY-pageY)>1){
+          window.scrollTo({left:pageX,top:pageY,behavior:'instant'});
+        }
+      });
+    });
     $('clearNotesBtn').addEventListener('click',()=>{
       if(isPractising)stopPractice(false);
       events=[];draftNotes=[];selectedNote=null;selectedHit=null;editorPageIndex=0;
