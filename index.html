@@ -97,7 +97,7 @@
             <div class="field">
               <label class="control-label" for="accidentalSelect">Accidental</label>
               <select id="accidentalSelect">
-                <option value="0" selected>♮ Natural</option>
+                <option value="0" selected>Natural (no sign)</option>
                 <option value="1">♯ Sharp</option>
                 <option value="-1">♭ Flat</option>
               </select>
@@ -219,7 +219,9 @@
       return {clef,step,letter,accidental:acc,octave,midi:midiFromParts(letter,acc,octave),x};
     }
     function formatNote(note) {
-      const accidental = note.accidental===0 ? '♮' : (note.accidental===1 ? '♯' : '♭');
+      // Natural pitches use the plain note name; only sharps and flats
+      // receive an accidental symbol in notation and sequence labels.
+      const accidental = note.accidental===0 ? '' : (note.accidental===1 ? '♯' : '♭');
       return `${note.letter}${accidental}${note.octave}`;
     }
     function midiSpelling(midi, clef) {
@@ -256,10 +258,11 @@
     }
     function noteMarkup(note, x, y, state='', staff=null) {
       const cls=state?` ${state}`:'';
-      const glyph=ACCIDENTAL_GLYPH[String(note.accidental)]||'♮';
+      const glyph=ACCIDENTAL_GLYPH[String(note.accidental)]||'';
+      const accidentalMarkup = note.accidental===0 ? '' : `<text class="note-accidental${cls}" x="${x-24}" y="${y+8}">${glyph}</text>`;
       const ledger=staff ? ledgerMarkup(x,y, note.clef==='treble'?staff.treble.bottom:staff.bass.bottom,staff.stepY,note.step) : '';
       return `${ledger}
-        <text class="note-accidental${cls}" x="${x-24}" y="${y+8}">${glyph}</text>
+        ${accidentalMarkup}
         ${state==='preview'?`<ellipse class="preview-ring" cx="${x}" cy="${y}" rx="17" ry="13"/>`:''}
         <ellipse class="notehead${cls}" cx="${x}" cy="${y}" rx="12" ry="8" transform="rotate(-18 ${x} ${y})"/>`;
     }
