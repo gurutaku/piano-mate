@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#f6f1e8">
-  <meta name="description" content="A friendly piano practice coach. Create a note path on the music staff and play it on your piano.">
+  <meta name="description" content="A friendly piano practice coach. Compose notes and bar lines on a grand staff, then practise on your piano.">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Piano Pal">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -120,6 +120,57 @@
       .practice-hint{margin-top:8px}
     }
 
+    /* Bar lines and full-screen landscape practice mode */
+    .composer-actions{align-items:center}
+    #barLineBtn[aria-pressed="true"]{background:#ffedb8;color:#725a1e;box-shadow:inset 0 0 0 2px #e5bd57}
+    .bar-line{stroke:#273c3e;stroke-width:4;stroke-linecap:round;pointer-events:stroke;cursor:pointer}
+    .practice-panel:not(.practice-fullscreen){background:#243b42;color:#fff;border:0}
+    .practice-panel:not(.practice-fullscreen) h3{color:#fff}
+    .practice-panel:not(.practice-fullscreen) .practice-intro{color:#c7d4d0}
+    .practice-topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;position:relative;z-index:2;flex:none}
+    .practice-topbar h3{font-size:20px;margin:0;color:#fff}
+    .practice-topbar .btn{min-height:36px;padding:8px 13px}
+    .practice-panel:not(.practice-fullscreen) #exitPracticeBtn{display:none}
+    .practice-ready-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:160px;padding:18px;text-align:center;color:#dce8e2;border:1px dashed rgba(255,255,255,.25);border-radius:16px;background:rgba(8,24,29,.22)}
+    .practice-ready-placeholder span{font-size:12px;line-height:1.45;color:#b9cbc5;max-width:270px}
+    .practice-idle-icon{font-size:34px}
+    .practice-panel:not(.practice-fullscreen) .practice-staff-shell,
+    .practice-panel:not(.practice-fullscreen) .progress-wrap,
+    .practice-panel:not(.practice-fullscreen) .practice-actions,
+    .practice-panel:not(.practice-fullscreen) .practice-hint,
+    .practice-panel:not(.practice-fullscreen) .wrong-note-message{display:none}
+    .practice-panel.practice-fullscreen{position:fixed!important;inset:0!important;z-index:10000!important;width:100vw!important;max-width:none!important;height:100vh!important;height:100dvh!important;max-height:100dvh!important;margin:0!important;border:0!important;border-radius:0!important;padding:calc(env(safe-area-inset-top) + 8px) max(env(safe-area-inset-right),12px) calc(env(safe-area-inset-bottom) + 8px) max(env(safe-area-inset-left),12px)!important;display:flex!important;flex-direction:column;gap:7px;overflow:hidden!important;box-shadow:none!important;background:#243b42!important;}
+    .practice-fullscreen:after{display:none}
+    .practice-fullscreen .practice-topbar h3{font-size:clamp(17px,2.7vh,24px)}
+    .practice-fullscreen .practice-intro,.practice-fullscreen .practice-ready-placeholder,.practice-fullscreen .settings{display:none!important}
+    .practice-fullscreen .practice-staff-shell{display:flex;flex:1 1 auto;min-height:0;min-width:0;width:100%;max-width:100%;margin:0;padding:5px;border-radius:13px;overflow:hidden;contain:layout paint}
+    .practice-fullscreen .practice-viewport{display:block;flex:1 1 auto;width:100%;height:100%;min-width:0;min-height:0;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scrollbar-width:thin;touch-action:pan-x;}
+    .practice-fullscreen #practiceStaff{display:block;height:auto;max-width:none;min-width:0;flex:none;touch-action:pan-x}
+    .practice-fullscreen .progress-wrap{flex:none;margin-top:1px}
+    .practice-fullscreen .progress-meta{font-size:11px;margin-bottom:5px}
+    .practice-fullscreen .progress-track{height:7px}
+    .practice-fullscreen .practice-actions{flex:none;margin-top:0;max-width:440px;width:100%;align-self:center}
+    .practice-fullscreen .practice-actions .btn{min-height:40px;font-size:14px}
+    .practice-fullscreen .practice-hint{flex:none;margin:0;min-height:16px;font-size:11px}
+    .wrong-note-message{position:relative;z-index:3;flex:none;text-align:center;color:#ffb3a8;font-weight:950;font-size:clamp(17px,2.4vh,23px);line-height:1.1;text-shadow:0 2px 10px rgba(240,90,80,.18)}
+    .practice-fullscreen .wrong-note-message{position:absolute;left:0;right:0;top:calc(env(safe-area-inset-top) + 52px);pointer-events:none}
+    .wrong-note-message[hidden]{display:none!important}
+    .rotate-prompt{display:none}
+    .practice-event-zone{fill:transparent;pointer-events:all}
+    .practice-event{cursor:pointer}
+    .practice-event.selected .notehead.current{filter:drop-shadow(0 0 8px rgba(255,209,102,.7))}
+    .practice-fullscreen .notehead{stroke-width:3.2}
+    .practice-fullscreen .note-accidental{font-size:54px}
+    .practice-fullscreen .chord-guide{stroke-width:4;stroke-dasharray:5 7}
+    html.practice-mode,html.practice-mode body{width:100%;height:100%;overflow:hidden!important;overscroll-behavior:none}
+    @media (orientation:portrait) and (max-width:900px){
+      .practice-fullscreen .rotate-prompt{display:flex;flex:1;min-height:0;align-items:center;justify-content:center;flex-direction:column;gap:12px;text-align:center;color:#fff;padding:22px}
+      .practice-fullscreen .rotate-prompt strong{font-size:23px}
+      .practice-fullscreen .rotate-prompt span{font-size:14px;color:#c7d4d0}
+      .practice-fullscreen .rotate-icon{font-size:55px;line-height:1;color:#ffd166;transform:rotate(90deg)}
+      .practice-fullscreen .practice-staff-shell,.practice-fullscreen .progress-wrap,.practice-fullscreen .practice-actions,.practice-fullscreen .practice-hint{display:none!important}
+    }
+    @media(max-width:560px){.composer-actions .btn{padding:10px 11px;font-size:12px}.composer-actions #barLineBtn{flex:1 1 100%}.practice-panel:not(.practice-fullscreen) .practice-ready-placeholder{min-height:130px}}
   </style>
 </head>
 <body>
@@ -138,7 +189,7 @@
       <div class="left-stack">
         <section class="panel">
           <h3><span class="step">1</span>Build your music</h3>
-          <p class="panel-intro">Drag up or down to choose each pitch on the grand staff. Place notes in the same column to make a chord, or in separate columns to make the next notes.</p>
+          <p class="panel-intro">Drag up or down to place notes on either clef. Line up notes to make a chord. Select <strong>Add bar line</strong>, then tap a gap between note columns to divide measures.</p>
 
           <div class="editor-toolbar">
             <div class="field accidental-field">
@@ -161,31 +212,46 @@
               <svg id="composerStaff" viewBox="0 0 760 580" role="img" aria-label="Interactive treble and bass grand staff"></svg>
             </div>
           </div>
-          <div class="editor-status"><span class="status-dot" id="selectionDot"></span><span class="hint" id="editorHint" style="margin:0">Drag on either staff to place notes. Use the small arrows to change pages. Notes in the same column make a chord; tap a notehead to remove it.</span></div>
-          <div class="action-row">
+          <div class="editor-status"><span class="status-dot" id="selectionDot"></span><span class="hint" id="editorHint" style="margin:0">Drag on either staff to place notes. Use the arrows to change pages. Line up notes for chords; add a bar line to separate measures. Tap a notehead or bar line to remove it.</span></div>
+          <div class="action-row composer-actions">
+            <button class="btn soft" id="barLineBtn" type="button" aria-pressed="false">＋ Add bar line</button>
             <button class="btn danger" id="clearNotesBtn" type="button" disabled>Clear all</button>
             <span class="spacer"></span>
-            <button class="btn primary" id="addBtn" type="button" disabled>Add notes</button>
+            <button class="btn primary" id="addBtn" type="button" disabled>Ready</button>
           </div>
         </section>
 
       </div>
 
       <div class="right-stack">
-        <section class="panel practice-panel">
-          <h3><span class="step" style="background:#48636a;color:#fff">2</span>Play with Piano Pal</h3>
-          <p class="panel-intro">Your music is shown from left to right. Before starting, scroll to preview it; during practice, the next note stays at the right.</p>
+        <section class="panel practice-panel" id="practicePanel" aria-label="Piano Pal practice">
+          <div class="practice-topbar">
+            <h3><span class="step" style="background:#48636a;color:#fff">2</span>Play with Piano Pal</h3>
+            <button class="btn ghost" id="exitPracticeBtn" type="button">Exit</button>
+          </div>
+          <p class="panel-intro practice-intro">When your music is ready, select <strong>Ready</strong> to open the large landscape practice screen.</p>
+          <div class="practice-ready-placeholder" id="practiceIdle">
+            <div class="practice-idle-icon">🎼</div>
+            <strong>Your music will appear here.</strong>
+            <span>Finish composing, then press <b>Ready</b> to practise in landscape mode.</span>
+          </div>
+          <div class="rotate-prompt" id="rotatePrompt" aria-live="polite">
+            <div class="rotate-icon">↻</div>
+            <strong>Turn your device sideways</strong>
+            <span>Piano Pal is easier to play in landscape.</span>
+          </div>
           <div class="practice-staff-shell">
             <div id="practiceViewport" class="practice-viewport" aria-label="Scrollable practice grand staff">
-              <svg id="practiceStaff" viewBox="0 0 760 580" role="img" aria-label="Your music on the grand staff"></svg>
+              <svg id="practiceStaff" viewBox="0 0 1540 520" role="img" aria-label="Your music on the grand staff"></svg>
             </div>
           </div>
+          <div class="wrong-note-message" id="wrongNoteMessage" hidden aria-live="assertive">Wrong note!</div>
           <div class="progress-wrap">
             <div class="progress-meta"><span>Practice progress</span><span id="progressCount">0 / 0</span></div>
             <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
           </div>
           <div class="practice-actions">
-            <button class="btn primary" id="startBtn" type="button" disabled>🎹 Start practice</button>
+            <button class="btn primary" id="startBtn" type="button" disabled>Start</button>
             <button class="btn ghost" id="stopBtn" type="button" disabled>Pause</button>
           </div>
           <p class="practice-hint" id="practiceHint">Your next note will appear here.</p>
@@ -225,13 +291,20 @@
       treble:{top:108,bottom:236},bass:{top:356,bottom:484}
     };
     const EDITOR = STAFF;
-    const PRACTICE = STAFF;
+    const PRACTICE = {
+      viewW:1540,viewH:520,left:92,right:1510,stepY:12,centerX:800,
+      treble:{top:88,bottom:184},bass:{top:300,bottom:396},
+      noteRx:36,noteRy:25,ledgerLength:76,accidentalOffset:48,accidentalFontSize:54
+    };
+    const PRACTICE_START_X = 145;
+    const PRACTICE_STEP_X = 90;
+    const PRACTICE_VISIBLE_EVENTS = 16;
+    const PRACTICE_BASE_W = PRACTICE_START_X + (PRACTICE_VISIBLE_EVENTS-1)*PRACTICE_STEP_X + PRACTICE_STEP_X/2 + 55;
     const COLUMN_START = 160;
     const COLUMN_GAP = 112;
     const PAGE_SLOTS = 6;
     const PAGE_SPAN = COLUMN_GAP * PAGE_SLOTS;
     const SNAP_RADIUS = 43;
-    const PRACTICE_START_X = STAFF.viewW - 112;
 
     let events = [];
     let draftNotes = [];
@@ -240,12 +313,19 @@
     let selectedNote = null;
     let selectedHit = null;
     let editorPageIndex = 0;
+    let barLines = [];
+    let barLineMode = false;
+    let practiceModeActive = false;
+    let completedIndices = new Set();
+    let lastWrongSpokenAt = 0;
     let dragging = false;
     let dragMoved = false;
     let pointerStart = null;
     let activePointerId = null;
     let detector = null;
     let isPractising = false;
+    let practiceStarting = false;
+    let practiceStartToken = 0;
     let practiceViewStarted = false;
     let currentIndex = 0;
     let attempt = {lastSoundAt:0,matched:new Set(),candidateFrames:new Map()};
@@ -308,11 +388,12 @@
       const cls=state?` ${state}`:'';
       const glyph=ACCIDENTAL_GLYPH[String(note.accidental)]||'';
       const noteId=Number(note.id)>0?`data-note-id="${note.id}"`:'';
-      const accidentalMarkup = note.accidental===0 ? '' : `<text class="note-accidental${cls}" ${noteId} x="${x-39}" y="${y+13}">${glyph}</text>`;
-      const ledger=ledgerMarkup(x,y,note.clef==='treble'?staff.treble.bottom:staff.bass.bottom,staff.stepY,note.step,'ledger-line',60);
+      const accidentalMarkup = note.accidental===0 ? '' : `<text class="note-accidental${cls}" ${noteId} x="${x-(staff.accidentalOffset||39)}" y="${y+13}"${staff.accidentalFontSize?` style="font-size:${staff.accidentalFontSize}px"`:''}>${glyph}</text>`;
+      const ledger=ledgerMarkup(x,y,note.clef==='treble'?staff.treble.bottom:staff.bass.bottom,staff.stepY,note.step,'ledger-line',staff.ledgerLength||60);
+      const rx=staff.noteRx||25,ry=staff.noteRy||17;
       return `${ledger}${accidentalMarkup}
-        ${state==='preview'?`<ellipse class="preview-ring" cx="${x}" cy="${y}" rx="31" ry="23"/>`:''}
-        <ellipse class="notehead${cls}" ${noteId} cx="${x}" cy="${y}" rx="25" ry="17" transform="rotate(-18 ${x} ${y})"/>`;
+        ${state==='preview'?`<ellipse class="preview-ring" cx="${x}" cy="${y}" rx="${Math.round(rx*1.24)}" ry="${Math.round(ry*1.28)}"/>`:''}
+        <ellipse class="notehead${cls}" ${noteId} cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" transform="rotate(-18 ${x} ${y})"/>`;
     }
     function visualNoteX(note, notes, columnX) {
       const hasAdjacent = notes.some(other=>other!==note&&other.clef===note.clef&&Math.abs(other.step-note.step)===1);
@@ -341,7 +422,7 @@
       const right=Math.max(staff.right,contentW-30);
       let html=`<rect x="0" y="0" width="${contentW}" height="${staff.viewH}" rx="13" fill="${dark?'transparent':'#fffefa'}"/>
         <text class="staff-label" x="${staff.left}" y="42">TREBLE</text>
-        <text class="staff-label" x="${staff.left}" y="548">BASS</text>
+        <text class="staff-label" x="${staff.left}" y="${staff.bass.bottom+64}">BASS</text>
         <text class="clef-mark" x="5" y="${staff.treble.bottom+12}">𝄞</text>
         <text class="clef-mark" x="5" y="${staff.bass.bottom+12}">𝄢</text>`;
       for(let i=0;i<5;i++){
@@ -405,7 +486,7 @@
     }
     function editorPageOffset() { return editorPageIndex * PAGE_SPAN; }
     function editorLastUsedPage() {
-      const xs=[...events.map(ev=>ev.x),...draftNotes.map(note=>note.x),...(selectedNote?[selectedNote.x]:[])];
+      const xs=[...events.map(ev=>ev.x),...draftNotes.map(note=>note.x),...barLines,...(selectedNote?[selectedNote.x]:[])];
       return xs.length?Math.max(0,Math.floor((Math.max(...xs)-COLUMN_START)/PAGE_SPAN)):0;
     }
     function updateEditorPageNav() {
@@ -437,6 +518,12 @@
       const pageMax=pageOffset+COLUMN_START+(PAGE_SLOTS-1)*COLUMN_GAP+1;
       let html=drawGrandStaffBase(STAFF.viewW,EDITOR,false);
       const columns=new Map();
+      barLines.forEach(barX=>{
+        const localX=barX-pageOffset;
+        if(localX>=70&&localX<=STAFF.viewW-18){
+          html+=`<line class="bar-line" data-bar-x="${barX}" x1="${localX}" y1="${EDITOR.treble.top-9}" x2="${localX}" y2="${EDITOR.bass.bottom+9}"/>`;
+        }
+      });
       const addToColumn=(note,state)=>{
         if(note.x<pageMin||note.x>pageMax)return;
         const x=Math.round(note.x-pageOffset);
@@ -454,8 +541,10 @@
       }
       svg.innerHTML=html;
       fitEditorStaffSvg(svg,viewport,EDITOR);
-      $('addBtn').disabled=draftNotes.length===0;
-      $('clearNotesBtn').disabled=events.length===0&&!draftNotes.length;
+      $('addBtn').disabled=events.length===0&&!draftNotes.length;
+      $('clearNotesBtn').disabled=events.length===0&&!draftNotes.length&&!barLines.length;
+      $('barLineBtn').setAttribute('aria-pressed',String(barLineMode));
+      $('barLineBtn').textContent=barLineMode?'Tap a gap on the staff…':'＋ Add bar line';
       $('selectionDot').classList.toggle('ready',draftNotes.length>0||!!selectedNote);
       updateEditorPageNav();
     }
@@ -503,17 +592,18 @@
     function resetAttempt(){attempt={lastSoundAt:0,matched:new Set(),candidateFrames:new Map()};}
     function resetCarryover(){carryoverMidis.clear();carryoverReleaseFrames.clear();}
     function updateProgress() {
-      $('progressCount').textContent=`${Math.min(currentIndex,events.length)} / ${events.length}`;
-      $('progressFill').style.width=events.length?`${Math.min(100,currentIndex/events.length*100)}%`:'0%';
+      const done=Math.min(completedIndices.size,events.length);
+      $('progressCount').textContent=`${done} / ${events.length}`;
+      $('progressFill').style.width=events.length?`${Math.min(100,done/events.length*100)}%`:'0%';
     }
     function resetPractice(renderStaff=true) {
-      currentIndex=0;practiceViewStarted=false;resetAttempt();resetCarryover();wrongFlash=[];clearTimeout(wrongFlashTimer);
+      currentIndex=0;practiceViewStarted=false;completedIndices.clear();resetAttempt();resetCarryover();wrongFlash=[];clearTimeout(wrongFlashTimer);
       updateProgress();
-      if(renderStaff)renderPracticeStaff();
-      $('practiceViewport').scrollLeft=0;
-      $('startBtn').textContent='🎹 Start practice';
+      if(renderStaff&&practiceModeActive)renderPracticeStaff();
+      if(practiceModeActive)$('practiceViewport').scrollLeft=0;
+      $('startBtn').textContent='Start';
       $('startBtn').disabled=!events.length||isPractising;
-      $('practiceHint').textContent=events.length?'Scroll to preview your music, then start when ready.':'Add notes to begin.';
+      $('practiceHint').textContent=events.length?'Scroll through the music and tap a note or chord to choose where to start.':'Add notes to begin.';
     }
     function addDraftNotes() {
       if(!draftNotes.length)return;
@@ -530,11 +620,8 @@
       });
       events=events.filter(ev=>ev.notes.length).sort((a,b)=>a.x-b.x);
       draftNotes=[];selectedNote=null;selectedHit=null;
-      // Update the small fixed editor and the practice strip once each. Avoid
-      // duplicate SVG resizes/reflows on iOS after adding a multi-page score.
-      resetPractice(false);drawEditorStaff();renderPracticeStaff();
-      $('editorHint').textContent='Notes added. Use the arrows to move between staff pages, or start playing the sequence.';
-      showToast('Notes added to the grand staff.');
+      resetPractice(false);drawEditorStaff();
+      $('editorHint').textContent='Music ready. Press Ready to open the landscape practice screen.';
     }
     function removeNoteHit(hit) {
       if(isPractising)stopPractice(false);
@@ -553,58 +640,156 @@
       if(duplicate){showToast('That note is already in this chord.');return;}
       note.id=nextNoteId++;
       draftNotes.push(note);
-      $('editorHint').textContent=`${draftNotes.length} new ${draftNotes.length===1?'note':'notes'} ready. Add notes when you are finished.`;
+      $('editorHint').textContent=`${draftNotes.length} new ${draftNotes.length===1?'note':'notes'} placed. Add more notes or bar lines, then press Ready.`;
     }
     function drawPracticeBase(contentW) {
       return drawGrandStaffBase(contentW,PRACTICE,true);
     }
-    function practiceOffset() {
-      if(!practiceViewStarted||!events.length)return 0;
-      return PRACTICE_START_X-events[0].x;
+    function practiceEventX(index) {
+      return PRACTICE_START_X + index*PRACTICE_STEP_X;
     }
-    function practiceEventX(event) { return event.x+practiceOffset(); }
+    function practiceBarX(barX) {
+      if(!events.length)return PRACTICE_START_X;
+      const rightIndex=events.findIndex(ev=>ev.x>barX);
+      if(rightIndex===0)return PRACTICE_START_X-.5*PRACTICE_STEP_X;
+      if(rightIndex<0)return PRACTICE_START_X+(events.length-.5)*PRACTICE_STEP_X;
+      const leftIndex=rightIndex-1;
+      const leftX=events[leftIndex].x,rightX=events[rightIndex].x;
+      const fraction=Math.max(0,Math.min(1,(barX-leftX)/(rightX-leftX)));
+      return PRACTICE_START_X+(leftIndex+fraction)*PRACTICE_STEP_X;
+    }
+    function fitPracticeSvg(svg,viewport,contentW) {
+      const width=Math.max(1,viewport.clientWidth||window.innerWidth||800);
+      const height=Math.max(1,viewport.clientHeight||220);
+      const scale=Math.min(width/PRACTICE_BASE_W,height/PRACTICE.viewH);
+      const pixelW=contentW*scale;
+      const pixelH=PRACTICE.viewH*scale;
+      svg.setAttribute('viewBox',`0 0 ${contentW} ${PRACTICE.viewH}`);
+      svg.setAttribute('width',String(pixelW));svg.setAttribute('height',String(pixelH));
+      svg.style.display='block';svg.style.width=`${pixelW}px`;svg.style.height=`${pixelH}px`;
+      svg.style.maxWidth='none';svg.style.minWidth='0';svg.style.flex='none';
+      svg.style.marginLeft=pixelW<width?'auto':'0';svg.style.marginRight=pixelW<width?'auto':'0';
+      svg.dataset.scale=String(scale);svg.dataset.contentWidth=String(contentW);
+      viewport.style.width='100%';viewport.style.maxWidth='100%';viewport.style.minWidth='0';
+      viewport.style.overflowX=contentW*scale>width+1?'auto':'hidden';
+    }
     function renderPracticeStaff() {
       const svg=$('practiceStaff');
       const viewport=$('practiceViewport');
-      const offset=practiceOffset();
-      const xs=events.map(ev=>ev.x+offset);
-      const maxX=xs.length?Math.max(...xs):COLUMN_START;
-      const contentW=Math.max(STAFF.viewW,Math.ceil((maxX+95)/40)*40);
+      if(!practiceModeActive){svg.innerHTML='';return;}
+      const contentW=Math.max(PRACTICE_BASE_W,Math.ceil((PRACTICE_START_X+Math.max(0,events.length-1)*PRACTICE_STEP_X+PRACTICE_STEP_X/2+55)/10)*10);
       let html=drawPracticeBase(contentW);
+      // Bar lines are mapped to the gap between the notes they separate.
+      barLines.forEach(bar=>{
+        const x=practiceBarX(bar);
+        html+=`<line class="bar-line" x1="${x}" y1="${PRACTICE.treble.top-5}" x2="${x}" y2="${PRACTICE.bass.bottom+5}" style="stroke:#e2eee8;stroke-width:3.5"/>`;
+      });
       events.forEach((ev,index)=>{
-        const state=practiceViewStarted?(index<currentIndex?'completed':index===currentIndex?'current':'future'):'future';
-        html+=renderNoteGroup(ev.notes,practiceEventX(ev),state,null,PRACTICE);
+        const x=practiceEventX(index);
+        const state=completedIndices.has(index)?'completed':index===currentIndex?'current':'future';
+        html+=`<g class="practice-event ${index===currentIndex?'selected':''}" data-event-index="${index}">
+          <rect class="practice-event-zone" x="${x-PRACTICE_STEP_X/2}" y="52" width="${PRACTICE_STEP_X}" height="${PRACTICE.bass.bottom+60-52}"/>
+          ${renderNoteGroup(ev.notes,x,state,null,PRACTICE)}
+        </g>`;
       });
       if(wrongFlash.length&&events[currentIndex]){
-        const x=practiceEventX(events[currentIndex]);
+        const x=practiceEventX(currentIndex);
         const wrong=wrongFlash.map(m=>midiSpelling(m,m>=60?'treble':'bass'));
         html+=renderNoteGroup(wrong,x,'wrong',null,PRACTICE);
       }
       if(!events.length){
-        html+=`<text class="staff-hint" x="${STAFF.viewW/2}" y="${STAFF.viewH/2}" text-anchor="middle" style="font-size:22px;font-weight:850">Add notes to begin</text>`;
-      }else if(practiceViewStarted&&currentIndex>=events.length){
-        html+=`<text class="staff-hint" x="${Math.max(STAFF.viewW/2,maxX)}" y="${STAFF.viewH/2}" text-anchor="middle" style="font-size:22px;font-weight:850">All done! ✨</text>`;
+        html+=`<text class="staff-hint" x="${PRACTICE.viewW/2}" y="${PRACTICE.viewH/2}" text-anchor="middle" style="font-size:24px;font-weight:850">Add notes to begin</text>`;
+      }else if(currentIndex>=events.length){
+        html+=`<text class="staff-hint" x="${Math.max(PRACTICE.viewW/2,PRACTICE_START_X)}" y="${PRACTICE.viewH/2}" text-anchor="middle" style="font-size:24px;font-weight:850">All done! ✨</text>`;
       }
       svg.innerHTML=html;
-      fitStaffSvg(svg,viewport,contentW,PRACTICE);
-      if(practiceViewStarted)requestAnimationFrame(scrollPracticeToCurrent);
+      fitPracticeSvg(svg,viewport,contentW);
+      if(isPractising)requestAnimationFrame(scrollPracticeToCurrent);
     }
     function scrollPracticeToCurrent() {
-      if(!practiceViewStarted||!events.length)return;
+      if(!practiceModeActive||!events.length)return;
       const viewport=$('practiceViewport');
-      const svg=$('practiceStaff');
-      const scale=Number(svg.dataset.scale)||1;
-      const current=events[Math.min(currentIndex,events.length-1)];
-      if(!current)return;
-      const x=practiceEventX(current)*scale;
-      const rightPad=Math.min(58,viewport.clientWidth*.14);
+      const scale=Number($('practiceStaff').dataset.scale)||1;
+      const x=practiceEventX(Math.min(currentIndex,events.length-1))*scale;
+      const rightPad=Math.min(42,viewport.clientWidth*.07);
       const targetScroll=Math.max(0,x-(viewport.clientWidth-rightPad));
       viewport.scrollLeft=targetScroll;
     }
+    function selectPracticeEvent(index) {
+      if(!practiceModeActive||isPractising||practiceStarting||index<0||index>=events.length)return;
+      currentIndex=index;
+      for(const done of [...completedIndices])if(done>=index)completedIndices.delete(done);
+      resetAttempt();resetCarryover();wrongFlash=[];clearTimeout(wrongFlashTimer);
+      $('wrongNoteMessage').hidden=true;
+      updateProgress();renderPracticeStaff();
+      $('practiceHint').textContent=`Starting point selected: ${index+1} of ${events.length}. Press Start when ready.`;
+    }
+    function addBarLineFromPoint(point) {
+      const minGapX=COLUMN_START-COLUMN_GAP/2;
+      const maxGapX=COLUMN_START+(PAGE_SLOTS-1.5)*COLUMN_GAP;
+      if(point.x<minGapX-4||point.x>maxGapX+4){showToast('Tap a space between the note columns.');return;}
+      const pageOffset=editorPageOffset();
+      const target=Math.max(-1,Math.min(PAGE_SLOTS-2,Math.round((point.x-COLUMN_START)/COLUMN_GAP-.5)));
+      const barX=pageOffset+COLUMN_START+(target+.5)*COLUMN_GAP;
+      if(barLines.some(x=>Math.abs(x-barX)<10)){showToast('There is already a bar line in that space.');return;}
+      barLines.push(barX);barLines.sort((a,b)=>a-b);
+      barLineMode=false;drawEditorStaff();
+      $('editorHint').textContent='Bar line added. It separates the notes on either side.';
+    }
+    function enterPracticeMode() {
+      if(!events.length)return;
+      practiceModeActive=true;practiceViewStarted=true;
+      completedIndices.clear();currentIndex=0;resetAttempt();resetCarryover();wrongFlash=[];
+      $('wrongNoteMessage').hidden=true;
+      const panel=$('practicePanel');
+      document.documentElement.classList.add('practice-mode');
+      panel.classList.add('practice-fullscreen');
+      $('startBtn').disabled=false;$('startBtn').textContent='Start';$('stopBtn').disabled=true;
+      $('practiceHint').textContent='Scroll through the music and tap a note or chord to choose where to start.';
+      // Use native element fullscreen where available (desktop and supported tablets).
+      // iPhone Safari uses this fixed-screen PWA fallback plus a physical rotation.
+      try{
+        const request=panel.requestFullscreen||panel.webkitRequestFullscreen;
+        if(request&&(document.fullscreenEnabled||panel.webkitRequestFullscreen)){
+          Promise.resolve(request.call(panel,{navigationUI:'hide'})).then(()=>{
+            try{if(practiceModeActive)screen.orientation?.lock?.('landscape')?.catch?.(()=>{});}catch(err){/* optional */}
+          }).catch(()=>{
+            try{if(practiceModeActive)screen.orientation?.lock?.('landscape')?.catch?.(()=>{});}catch(err){/* optional */}
+          });
+        }else{
+          try{if(practiceModeActive)screen.orientation?.lock?.('landscape')?.catch?.(()=>{});}catch(err){/* not supported on iPhone Safari */}
+        }
+      }catch(err){/* CSS full-screen fallback remains active */}
+      renderPracticeStaff();updateProgress();
+      requestAnimationFrame(()=>{$('practiceViewport').scrollLeft=0;});
+    }
+    async function exitPracticeMode() {
+      practiceStartToken++;practiceStarting=false;
+      if(isPractising)stopPractice(false);
+      else if(detector){try{detector.stop();}catch(err){}detector=null;}
+      practiceModeActive=false;practiceViewStarted=false;
+      $('practicePanel').classList.remove('practice-fullscreen');
+      document.documentElement.classList.remove('practice-mode');
+      try{screen.orientation?.unlock?.();}catch(err){/* optional */}
+      if(document.fullscreenElement){try{await document.exitFullscreen();}catch(err){/* already exited */}}
+      else if(document.webkitFullscreenElement&&document.webkitExitFullscreen){try{document.webkitExitFullscreen();}catch(err){/* optional */}}
+      $('wrongNoteMessage').hidden=true;
+      $('practiceHint').textContent='Practice closed. Make any changes, then press Ready to play again.';
+      $('startBtn').disabled=!events.length;
+      renderPracticeStaff();
+    }
     function renderAll() { drawEditorStaff();renderPracticeStaff();updateProgress(); }
     function showWrong(midiValues) {
-      wrongFlash=[...new Set(midiValues)];renderPracticeStaff();clearTimeout(wrongFlashTimer);
-      wrongFlashTimer=setTimeout(()=>{wrongFlash=[];renderPracticeStaff();},620);
+      wrongFlash=[...new Set(midiValues)];
+      const message=$('wrongNoteMessage');message.hidden=false;message.textContent='Wrong note!';
+      renderPracticeStaff();
+      const now=Date.now();
+      if(now-lastWrongSpokenAt>1300&&'speechSynthesis'in window&&'SpeechSynthesisUtterance'in window){
+        lastWrongSpokenAt=now;
+        try{window.speechSynthesis.cancel();const utterance=new SpeechSynthesisUtterance('Wrong note!');utterance.rate=1.08;utterance.pitch=1.05;utterance.volume=.85;window.speechSynthesis.speak(utterance);}catch(err){/* visual feedback still appears */}
+      }
+      clearTimeout(wrongFlashTimer);
+      wrongFlashTimer=setTimeout(()=>{wrongFlash=[];message.hidden=true;renderPracticeStaff();},850);
     }
 
     function closestExpected(actual,expected,tolerance) {
@@ -689,6 +874,7 @@
       if(wrong.length)showWrong(wrong);
       if(attempt.matched.size>=expected.length){
         const completedEvent=target;
+        completedIndices.add(currentIndex);
         currentIndex++;
         rememberTrailingPitches(completedEvent,events[currentIndex],heardSet);
         resetAttempt();wrongFlash=[];clearTimeout(wrongFlashTimer);
@@ -701,33 +887,38 @@
       }
     }
     async function startPractice() {
-      if(!events.length)return;
+      if(!events.length||practiceStarting||isPractising)return;
+      practiceStarting=true;
+      const startToken=++practiceStartToken;
       try{
         $('startBtn').disabled=true;$('startBtn').textContent='Starting…';
         const {create}=await import('https://cdn.jsdelivr.net/npm/@markusstrasser/pitchplease@3.1.0/pitchplease.js');
+        if(startToken!==practiceStartToken||!practiceModeActive)return;
         detector=create({model:'piano',threshold:{on:.6,off:.36},stabilityFrames:2,clearAfterMs:180,
           onNotes:(notes)=>comparePlayed(notes),
           onError:err=>{console.error(err);showToast(`Microphone issue: ${err.message||err.code||'check permission'}`);}
         });
         const ok=await detector.start();
+        if(startToken!==practiceStartToken||!practiceModeActive){try{detector?.stop?.();}catch(err){}detector=null;practiceStarting=false;return;}
         if(!ok)throw new Error('The microphone could not start. Check Safari permission and try again.');
-        isPractising=true;resetAttempt();resetCarryover();
-        $('startBtn').textContent='Practice running';$('startBtn').disabled=true;$('stopBtn').disabled=false;
-        $('practiceHint').textContent='Play the note or chord at the right side of the staff.';
+        practiceStarting=false;isPractising=true;resetAttempt();resetCarryover();
+        $('startBtn').textContent='Playing';$('startBtn').disabled=true;$('stopBtn').disabled=false;
+        $('practiceHint').textContent='Play the highlighted note or chord at the right side of the staff.';
         renderPracticeStaff();updateProgress();
         const monitor=()=>{if(!isPractising||!detector)return;if(detector.stats?.cpuLoad>.88&&detector.model==='piano'){detector.setModel('fast').catch(()=>{});}};
         clearInterval(cpuMonitorTimer);cpuMonitorTimer=setInterval(monitor,2500);
       }catch(err){
-        console.error(err);detector?.stop?.();detector=null;isPractising=false;practiceViewStarted=false;
-        $('startBtn').disabled=!events.length;$('startBtn').textContent='🎹 Start practice';$('stopBtn').disabled=true;
+        if(startToken!==practiceStartToken)return;
+        practiceStarting=false;console.error(err);detector?.stop?.();detector=null;isPractising=false;practiceViewStarted=true;
+        $('startBtn').disabled=!events.length;$('startBtn').textContent='Start';$('stopBtn').disabled=true;
         $('practiceHint').textContent='';renderPracticeStaff();showToast(err.message||'Could not start the microphone.');
       }
     }
     function stopPractice(completed=false) {
-      clearInterval(cpuMonitorTimer);cpuMonitorTimer=null;
+      clearInterval(cpuMonitorTimer);cpuMonitorTimer=null;practiceStarting=false;
       if(detector){try{detector.stop();}catch(err){console.warn(err);}detector=null;}
-      isPractising=false;$('startBtn').disabled=!events.length;$('startBtn').textContent=completed?'Practice again':'🎹 Start practice';$('stopBtn').disabled=true;
-      if(!completed)$('practiceHint').textContent='Practice paused. Start again whenever you are ready.';
+      isPractising=false;$('startBtn').disabled=!events.length;$('startBtn').textContent=completed?'Play again':'Start';$('stopBtn').disabled=true;
+      if(!completed)$('practiceHint').textContent='Paused. Scroll and tap a note or chord to choose a new starting point, or press Start to continue.';
       updateProgress();renderPracticeStaff();
     }
 
@@ -738,6 +929,13 @@
       if(event.button!==undefined&&event.button!==0)return;
       if(dragging||isPractising)return;
       const point=svgPoint(event,composerSurface);
+      const barNode=event.target.closest?.('[data-bar-x]');
+      if(barNode){
+        const x=Number(barNode.getAttribute('data-bar-x'));
+        barLines=barLines.filter(value=>Math.abs(value-x)>1);
+        drawEditorStaff();$('editorHint').textContent='Bar line removed.';return;
+      }
+      if(barLineMode){addBarLineFromPoint(point);return;}
       selectedHit=findNoteHitFromEvent(event);
       pointerStart={x:event.clientX,y:event.clientY};
       dragMoved=false;dragging=true;activePointerId=event.pointerId;
@@ -796,25 +994,48 @@
       if(selectedNote)selectedNote.accidental=Number($('accidentalSelect').value);
       drawEditorStaff();
     });
+    $('barLineBtn').addEventListener('click',()=>{
+      barLineMode=!barLineMode;
+      $('editorHint').textContent=barLineMode?'Tap one of the spaces between note columns to place a bar line. Tap an existing bar line to remove it.':'Drag on the staff to place notes.';
+      drawEditorStaff();
+    });
     $('addBtn').addEventListener('click',()=>{
-      // Do not blur controls or call window.scrollTo here. Safari can interpret
-      // programmatic focus/scroll corrections as a visual-viewport zoom.
+      if(!events.length&&!draftNotes.length)return;
       addDraftNotes();
+      if(!events.length)return;
+      barLineMode=false;drawEditorStaff();enterPracticeMode();
     });
     $('clearNotesBtn').addEventListener('click',()=>{
       if(isPractising)stopPractice(false);
-      events=[];draftNotes=[];selectedNote=null;selectedHit=null;editorPageIndex=0;
+      events=[];draftNotes=[];barLines=[];selectedNote=null;selectedHit=null;editorPageIndex=0;barLineMode=false;
       resetPractice();drawEditorStaff();renderPracticeStaff();
       $('editorHint').textContent='Staff cleared. Drag on either clef to start again.';
     });
     $('startBtn').addEventListener('click',()=>{
       if(isPractising||!events.length)return;
-      currentIndex=0;practiceViewStarted=true;resetAttempt();resetCarryover();wrongFlash=[];
+      if(currentIndex>=events.length){completedIndices.clear();currentIndex=0;}
+      resetAttempt();resetCarryover();wrongFlash=[];
+      $('wrongNoteMessage').hidden=true;
       renderPracticeStaff();requestAnimationFrame(scrollPracticeToCurrent);startPractice();
     });
     $('stopBtn').addEventListener('click',()=>stopPractice(false));
-    window.addEventListener('resize',()=>{drawEditorStaff();renderPracticeStaff();});
-    window.addEventListener('orientationchange',()=>setTimeout(()=>{drawEditorStaff();renderPracticeStaff();},250));
+    $('exitPracticeBtn').addEventListener('click',()=>exitPracticeMode());
+    $('practiceStaff').addEventListener('click',event=>{
+      const node=event.target.closest?.('[data-event-index]');
+      if(!node)return;
+      selectPracticeEvent(Number(node.getAttribute('data-event-index')));
+    });
+    const handleFullscreenChange=()=>{
+      const nativeFullscreen=document.fullscreenElement||document.webkitFullscreenElement;
+      if(practiceModeActive&&!nativeFullscreen&&$('practicePanel').classList.contains('practice-fullscreen')){
+        // Browser Escape / system fullscreen exit: return to the editor cleanly.
+        exitPracticeMode();
+      }
+    };
+    document.addEventListener('fullscreenchange',handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange',handleFullscreenChange);
+    window.addEventListener('resize',()=>{drawEditorStaff();if(practiceModeActive)renderPracticeStaff();});
+    window.addEventListener('orientationchange',()=>setTimeout(()=>{drawEditorStaff();if(practiceModeActive)renderPracticeStaff();},250));
     if('serviceWorker'in navigator&&location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(err=>console.warn('Service worker:',err)));
 
     drawEditorStaff();renderPracticeStaff();updateProgress();
