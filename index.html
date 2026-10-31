@@ -196,8 +196,11 @@
     let detector = null;
     let isPractising = false;
     let currentIndex = 0;
-    let attempt = {startedAt:0,lastSoundAt:0,matched:new Set()};
-    let waitingForRelease = false;
+    let attempt = {lastSoundAt:0,matched:new Set(),candidateFrames:new Map()};
+    // Pitches from the previous step may still ring during a slur. Ignore those
+    // trailing pitches until the detector reports them released.
+    let carryoverMidis = new Set();
+    let carryoverReleaseFrames = new Map();
     let wrongFlash = [];
     let wrongFlashTimer = null;
     let toastTimer = null;
@@ -347,8 +350,9 @@
       $('progressCount').textContent=`${Math.min(currentIndex,events.length)} / ${events.length}`;
       $('progressFill').style.width=events.length?`${Math.min(100,currentIndex/events.length*100)}%`:'0%';
     }
-    function resetAttempt(){attempt={startedAt:0,lastSoundAt:0,matched:new Set()};}
-    function resetPractice(){currentIndex=0;waitingForRelease=false;resetAttempt();wrongFlash=[];clearTimeout(wrongFlashTimer);updateProgress();renderPracticeStaff();}
+    function resetAttempt(){attempt={lastSoundAt:0,matched:new Set(),candidateFrames:new Map()};}
+    function resetCarryover(){carryoverMidis.clear();carryoverReleaseFrames.clear();}
+    function resetPractice(){currentIndex=0;resetAttempt();resetCarryover();wrongFlash=[];clearTimeout(wrongFlashTimer);updateProgress();renderPracticeStaff();}
 
     function noteStaffStep(note) { return note.step; }
     function noteClusterMarkup(notes, staff, state='') {
@@ -400,29 +404,86 @@
       expected.forEach((m,i)=>{const diff=Math.abs(actual-m);if(diff<=tolerance&&diff<bestDiff){best=i;bestDiff=diff;}});
       return best;
     }
+    function updateCarryoverRelease(heardSet) {
+      // Keep a completed pitch muted while it is still ringing. Three clear
+      // detector frames (~35 ms) are enough to distinguish a real release
+      // without requiring a long silence between slurred notes.
+      for (const midi of [...carryoverMidis]) {
+        if (heardSet.has(midi)) {
+          carryoverReleaseFrames.set(midi, 0);
+        } else {
+          const clearFrames = (carryoverReleaseFrames.get(midi) || 0) + 1;
+          carryoverReleaseFrames.set(midi, clearFrames);
+          if (clearFrames >= 3) {
+            carryoverMidis.delete(midi);
+            carryoverReleaseFrames.delete(midi);
+          }
+        }
+      }
+    }
+    function rememberTrailingPitches(completedEvent, nextEvent, heardSet) {
+      const completed = new Set(completedEvent.notes.map(note => note.midi));
+      const next = new Set((nextEvent?.notes || []).map(note => note.midi));
+      const samePitchSet = completed.size === next.size && [...completed].every(midi => next.has(midi));
+      for (const midi of completed) {
+        // A pitch shared by two different chord shapes can remain held as a
+        // common tone. An identical next event, however, needs a fresh strike.
+        if (samePitchSet || !next.has(midi)) {
+          carryoverMidis.add(midi);
+          carryoverReleaseFrames.set(midi, 0);
+        }
+      }
+    }
     function comparePlayed(notes) {
       if(!isPractising||currentIndex>=events.length)return;
       const now=performance.now();
       const heard=notes.filter(n=>n.prob>=Number($('sensitivitySelect').value)).map(n=>Math.round(n.midi));
       const unique=[...new Set(heard)];
+      const heardSet=new Set(unique);
+      updateCarryoverRelease(heardSet);
+
+      const target=events[currentIndex];if(!target)return;
       if(!unique.length){
-        if(waitingForRelease){waitingForRelease=false;resetAttempt();}
-        else if(attempt.lastSoundAt&&now-attempt.lastSoundAt>650)resetAttempt();
+        // A brief gap clears an in-progress candidate, but already-confirmed
+        // chord tones remain remembered while the player adds the other tones.
+        attempt.candidateFrames.clear();
         return;
       }
-      if(waitingForRelease)return;
-      const target=events[currentIndex];if(!target)return;
-      if(!attempt.startedAt)attempt.startedAt=now;
       attempt.lastSoundAt=now;
-      const expected=target.notes.map(n=>n.midi);const tolerance=Number($('toleranceSelect').value);
+      const expected=target.notes.map(n=>n.midi);
+      const tolerance=Number($('toleranceSelect').value);
       const wrong=[];
+      const candidateThisFrame=new Map();
+
       unique.forEach(midi=>{
         const idx=closestExpected(midi,expected,tolerance);
-        if(idx>=0)attempt.matched.add(idx);else wrong.push(midi);
+        if(idx>=0){
+          const expectedMidi=expected[idx];
+          // A note still ringing from the previous step must not count as a
+          // new note in this step (important for tied/slurred transitions).
+          if(carryoverMidis.has(midi)||carryoverMidis.has(expectedMidi))return;
+          if(!candidateThisFrame.has(expectedMidi))candidateThisFrame.set(expectedMidi,idx);
+        }else if(!carryoverMidis.has(midi)){
+          wrong.push(midi);
+        }
       });
+
+      // Candidate notes must be present on consecutive frames. Count each
+      // expected pitch only once per detector frame.
+      for(const midi of [...attempt.candidateFrames.keys()]){
+        if(!candidateThisFrame.has(midi))attempt.candidateFrames.delete(midi);
+      }
+      for(const [midi,idx] of candidateThisFrame){
+        const frames=(attempt.candidateFrames.get(midi)||0)+1;
+        attempt.candidateFrames.set(midi,frames);
+        if(frames>=2)attempt.matched.add(idx);
+      }
       if(wrong.length)showWrong(wrong);
       if(attempt.matched.size>=expected.length){
-        currentIndex++;waitingForRelease=true;resetAttempt();wrongFlash=[];clearTimeout(wrongFlashTimer);
+        const completedEvent=target;
+        currentIndex++;
+        rememberTrailingPitches(completedEvent,events[currentIndex],heardSet);
+        resetAttempt();wrongFlash=[];clearTimeout(wrongFlashTimer);
         updateProgress();renderPracticeStaff();
         if(currentIndex>=events.length){
           $('practiceHint').textContent='Wonderful! You played the whole music path. 🎉';
@@ -436,12 +497,12 @@
         $('startBtn').disabled=true;$('startBtn').textContent='Starting…';
         const {create}=await import('https://cdn.jsdelivr.net/npm/@markusstrasser/pitchplease@3.1.0/pitchplease.js');
         detector=create({model:'piano',threshold:{on:.6,off:.36},stabilityFrames:2,clearAfterMs:180,
-          onNotes:notes=>comparePlayed(notes),
+          onNotes:(notes)=>comparePlayed(notes),
           onError:err=>{console.error(err);showToast(`Microphone issue: ${err.message||err.code||'check permission'}`);}
         });
         const ok=await detector.start();
         if(!ok)throw new Error('The microphone could not start. Check Safari permission and try again.');
-        isPractising=true;waitingForRelease=false;resetAttempt();
+        isPractising=true;resetAttempt();resetCarryover();
         $('startBtn').textContent='Practice running';$('startBtn').disabled=true;$('stopBtn').disabled=false;
         $('practiceHint').textContent='Play the highlighted note or chord.';
         updateProgress();
@@ -513,7 +574,7 @@
       const row=remove.closest('[data-event]');if(isPractising)stopPractice(false);
       events=events.filter(item=>item.id!==Number(row.dataset.event));resetPractice();renderSequence();
     });
-    $('startBtn').addEventListener('click',()=>{if(isPractising)return;currentIndex=0;resetAttempt();waitingForRelease=false;wrongFlash=[];renderPracticeStaff();startPractice();});
+    $('startBtn').addEventListener('click',()=>{if(isPractising)return;currentIndex=0;resetAttempt();resetCarryover();wrongFlash=[];renderPracticeStaff();startPractice();});
     $('stopBtn').addEventListener('click',()=>stopPractice(false));
     window.addEventListener('resize',()=>{drawEditorStaff();renderPracticeStaff();});
     window.addEventListener('orientationchange',()=>setTimeout(()=>{drawEditorStaff();renderPracticeStaff();},250));
