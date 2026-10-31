@@ -294,12 +294,16 @@
     const PRACTICE = {
       viewW:1540,viewH:520,left:92,right:1510,stepY:12,centerX:800,
       treble:{top:88,bottom:184},bass:{top:300,bottom:396},
-      noteRx:36,noteRy:25,ledgerLength:76,accidentalOffset:48,accidentalFontSize:54
+      noteRx:39,noteRy:27,noteOffset:21,ledgerLength:84,accidentalOffset:48,accidentalFontSize:54
     };
     const PRACTICE_START_X = 145;
-    const PRACTICE_STEP_X = 90;
-    const PRACTICE_VISIBLE_EVENTS = 16;
-    const PRACTICE_BASE_W = PRACTICE_START_X + (PRACTICE_VISIBLE_EVENTS-1)*PRACTICE_STEP_X + PRACTICE_STEP_X/2 + 55;
+    const PRACTICE_MIN_STEP_X = 110;
+    const PRACTICE_MAX_VISIBLE_EVENTS = 20;
+    const PRACTICE_RIGHT_MARGIN = 70;
+    // Reserve enough logical width for 20 well-spaced events. On especially
+    // wide displays the event spacing expands, never the number shown.
+    const PRACTICE_BASE_W = PRACTICE_START_X + (PRACTICE_MAX_VISIBLE_EVENTS-1)*PRACTICE_MIN_STEP_X + PRACTICE_RIGHT_MARGIN + 55;
+    let practiceColumnGap = PRACTICE_MIN_STEP_X;
     const COLUMN_START = 160;
     const COLUMN_GAP = 112;
     const PAGE_SLOTS = 6;
@@ -395,9 +399,10 @@
         ${state==='preview'?`<ellipse class="preview-ring" cx="${x}" cy="${y}" rx="${Math.round(rx*1.24)}" ry="${Math.round(ry*1.28)}"/>`:''}
         <ellipse class="notehead${cls}" ${noteId} cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" transform="rotate(-18 ${x} ${y})"/>`;
     }
-    function visualNoteX(note, notes, columnX) {
+    function visualNoteX(note, notes, columnX, staff=STAFF) {
       const hasAdjacent = notes.some(other=>other!==note&&other.clef===note.clef&&Math.abs(other.step-note.step)===1);
-      let offset = hasAdjacent ? (Math.abs(note.step)%2===0 ? -17 : 17) : 0;
+      const stagger=staff.noteOffset||17;
+      let offset = hasAdjacent ? (Math.abs(note.step)%2===0 ? -stagger : stagger) : 0;
       const samePosition = notes.filter(other=>other.clef===note.clef&&other.step===note.step);
       if(samePosition.length>1){const sameIndex=samePosition.indexOf(note);offset+=(sameIndex-(samePosition.length-1)/2)*24;}
       return columnX+offset;
@@ -405,7 +410,7 @@
     function renderColumnMarkup(entries, columnX, staff=STAFF) {
       if(!entries.length)return '';
       const notes=entries.map(entry=>entry.note);
-      const positions=entries.map(entry=>({note:entry.note,state:entry.state,x:visualNoteX(entry.note,notes,columnX),y:noteY(entry.note,staff)}));
+      const positions=entries.map(entry=>({note:entry.note,state:entry.state,x:visualNoteX(entry.note,notes,columnX,staff),y:noteY(entry.note,staff)}));
       const minY=Math.min(...positions.map(p=>p.y));
       const maxY=Math.max(...positions.map(p=>p.y));
       let html='';
@@ -646,22 +651,41 @@
       return drawGrandStaffBase(contentW,PRACTICE,true);
     }
     function practiceEventX(index) {
-      return PRACTICE_START_X + index*PRACTICE_STEP_X;
+      return PRACTICE_START_X + index*practiceColumnGap;
     }
     function practiceBarX(barX) {
       if(!events.length)return PRACTICE_START_X;
       const rightIndex=events.findIndex(ev=>ev.x>barX);
-      if(rightIndex===0)return PRACTICE_START_X-.5*PRACTICE_STEP_X;
-      if(rightIndex<0)return PRACTICE_START_X+(events.length-.5)*PRACTICE_STEP_X;
+      if(rightIndex===0)return PRACTICE_START_X-.5*practiceColumnGap;
+      if(rightIndex<0)return PRACTICE_START_X+(events.length-.5)*practiceColumnGap;
       const leftIndex=rightIndex-1;
       const leftX=events[leftIndex].x,rightX=events[rightIndex].x;
       const fraction=Math.max(0,Math.min(1,(barX-leftX)/(rightX-leftX)));
-      return PRACTICE_START_X+(leftIndex+fraction)*PRACTICE_STEP_X;
+      return PRACTICE_START_X+(leftIndex+fraction)*practiceColumnGap;
     }
-    function fitPracticeSvg(svg,viewport,contentW) {
+    function getPracticeLayout(viewport) {
       const width=Math.max(1,viewport.clientWidth||window.innerWidth||800);
       const height=Math.max(1,viewport.clientHeight||220);
+      // The staff height and 20-event logical width jointly determine scale.
+      // If height is the limiting dimension on a very wide screen, increase
+      // the horizontal pitch between events so a 21st chord cannot enter view.
       const scale=Math.min(width/PRACTICE_BASE_W,height/PRACTICE.viewH);
+      const visibleUnits=width/scale;
+      // A gap of at least one nineteenth of the viewport's logical width
+      // prevents 21 event centres (and their noteheads) fitting at any scroll
+      // offset, not just when the score is at its far-left starting position.
+      const gapForTwenty=visibleUnits/(PRACTICE_MAX_VISIBLE_EVENTS-1);
+      practiceColumnGap=events.length>=PRACTICE_MAX_VISIBLE_EVENTS
+        ? Math.max(PRACTICE_MIN_STEP_X,gapForTwenty)
+        : PRACTICE_MIN_STEP_X;
+      const lastEventX=events.length?PRACTICE_START_X+(events.length-1)*practiceColumnGap:PRACTICE_START_X;
+      // For scores up to 20 events, keep the staff filling the viewport. Longer
+      // scores extend the SVG inside this scroller, never the document itself.
+      const contentW=Math.ceil(Math.max(visibleUnits,lastEventX+PRACTICE_RIGHT_MARGIN)/10)*10;
+      return {width,height,scale,contentW};
+    }
+    function fitPracticeSvg(svg,viewport,layout) {
+      const {width,scale,contentW}=layout;
       const pixelW=contentW*scale;
       const pixelH=PRACTICE.viewH*scale;
       svg.setAttribute('viewBox',`0 0 ${contentW} ${PRACTICE.viewH}`);
@@ -670,6 +694,7 @@
       svg.style.maxWidth='none';svg.style.minWidth='0';svg.style.flex='none';
       svg.style.marginLeft=pixelW<width?'auto':'0';svg.style.marginRight=pixelW<width?'auto':'0';
       svg.dataset.scale=String(scale);svg.dataset.contentWidth=String(contentW);
+      svg.dataset.columnGap=String(practiceColumnGap);svg.dataset.maxVisible=String(PRACTICE_MAX_VISIBLE_EVENTS);
       viewport.style.width='100%';viewport.style.maxWidth='100%';viewport.style.minWidth='0';
       viewport.style.overflowX=contentW*scale>width+1?'auto':'hidden';
     }
@@ -677,7 +702,8 @@
       const svg=$('practiceStaff');
       const viewport=$('practiceViewport');
       if(!practiceModeActive){svg.innerHTML='';return;}
-      const contentW=Math.max(PRACTICE_BASE_W,Math.ceil((PRACTICE_START_X+Math.max(0,events.length-1)*PRACTICE_STEP_X+PRACTICE_STEP_X/2+55)/10)*10);
+      const layout=getPracticeLayout(viewport);
+      const contentW=layout.contentW;
       let html=drawPracticeBase(contentW);
       // Bar lines are mapped to the gap between the notes they separate.
       barLines.forEach(bar=>{
@@ -688,7 +714,7 @@
         const x=practiceEventX(index);
         const state=completedIndices.has(index)?'completed':index===currentIndex?'current':'future';
         html+=`<g class="practice-event ${index===currentIndex?'selected':''}" data-event-index="${index}">
-          <rect class="practice-event-zone" x="${x-PRACTICE_STEP_X/2}" y="52" width="${PRACTICE_STEP_X}" height="${PRACTICE.bass.bottom+60-52}"/>
+          <rect class="practice-event-zone" x="${x-practiceColumnGap/2}" y="52" width="${practiceColumnGap}" height="${PRACTICE.bass.bottom+60-52}"/>
           ${renderNoteGroup(ev.notes,x,state,null,PRACTICE)}
         </g>`;
       });
@@ -703,7 +729,7 @@
         html+=`<text class="staff-hint" x="${Math.max(PRACTICE.viewW/2,PRACTICE_START_X)}" y="${PRACTICE.viewH/2}" text-anchor="middle" style="font-size:24px;font-weight:850">All done! ✨</text>`;
       }
       svg.innerHTML=html;
-      fitPracticeSvg(svg,viewport,contentW);
+      fitPracticeSvg(svg,viewport,layout);
       if(isPractising)requestAnimationFrame(scrollPracticeToCurrent);
     }
     function scrollPracticeToCurrent() {
