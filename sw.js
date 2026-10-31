@@ -1,4 +1,4 @@
-const CACHE = 'piano-pal-v1';
+const CACHE = 'piano-pal-v2';
 const CORE = ['./', './index.html', './manifest.webmanifest', './icon.svg', './apple-touch-icon.png'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting()));

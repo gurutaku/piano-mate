@@ -4,39 +4,40 @@ A static, mobile-first piano practice coach. It can be deployed directly to GitH
 
 ## What it does
 
-- Takes a new photo with a phone camera or selects an existing screenshot/photo.
-- Shows the sheet on screen. Calibrate the top and bottom staff lines for treble and/or bass, then tap noteheads from left to right to create the expected note path.
-- Supports grouped notes/chords, sharps, flats, natural notes, and a quick typed-note mode.
-- Imports uncompressed MusicXML (`.xml` / `.musicxml`) note pitches and chord groups.
-- Listens through the device microphone and checks played pitches against the sequence with friendly right/wrong feedback.
+- Provides a large, interactive music staff with treble and bass clef selection.
+- Lets the player drag vertically on the staff and release to position a highlighted notehead.
+- Defaults the accidental selector to natural (♮); sharps and flats can be selected before placing notes.
+- Builds melodies one note at a time or groups several notes into a chord before adding the chord. Chords can include notes from both clefs.
+- Shows the current expected note or chord on a grand staff during practice.
+- Uses the device microphone and a piano-specific pitch model to check played notes. Correct notes advance automatically; incorrect pitches briefly appear in red on the practice staff.
 - Works as a static PWA and is designed for iOS Safari over HTTPS.
 
 ## Deploy to GitHub Pages
 
 1. Copy `index.html`, `manifest.webmanifest`, `sw.js`, `icon.svg`, and `apple-touch-icon.png` into the root of your GitHub Pages repository (or into a project folder such as `/piano-pal/`).
 2. Commit and push.
-3. Open the published HTTPS URL on the iPhone/iPad in Safari.
+3. Open the published HTTPS URL on an iPhone or iPad in Safari.
 4. Use Share → Add to Home Screen to install it like an app.
-5. Allow microphone access when prompted. The first time the piano detector is used, the browser downloads its small model/runtime assets from jsDelivr.
+5. Allow microphone access when prompted. The first time the piano detector is used, the browser downloads its model/runtime assets from jsDelivr.
 
-No build command is required. Camera and microphone access need HTTPS (GitHub Pages provides HTTPS) or localhost.
+No build command is required. Microphone access needs HTTPS (GitHub Pages provides HTTPS) or localhost. An internet connection is needed the first time the pitch detector loads.
 
-## How to enter notes from a photo
+## Creating a music path
 
-1. Upload the sheet photo.
-2. Select Treble clef or Bass clef.
-3. Tap **Set staff lines**, then tap the bottom staff line followed by the top staff line.
-4. Select **Add notes** and tap noteheads from left to right. Set the accidental selector before each sharp or flat note; it resets to natural after one tap.
-5. For a chord, tap **Build a chord**, tap all of its noteheads (switch clefs if needed), and tap **Finish chord**.
-6. Review/correct pitches in **Your note path**, then start practice.
+1. Choose Treble or Bass.
+2. Select Natural, Sharp, or Flat. Natural is selected by default.
+3. Drag up or down on the large staff, then release. The highlighted notehead shows the selected pitch.
+4. Select **Add note** to add it to the sequence.
+5. For a chord, select **Build a chord**, place each note (switch between clefs when needed), then select **Add chord**.
+6. Remove individual steps with the × button, or use **Clear all** to start over.
 
-You can also type notes like `C4 D4 E4 C4` or chords like `C4+E4+G4 D4+F4+A4`.
+## Practice
 
-## Current limitations
+1. Select **Start practice** and allow microphone access.
+2. Play the note or chord displayed on the grand staff.
+3. Correct pitches advance to the next step. A wrong pitch is briefly highlighted in red on the staff.
 
-This version does not perform full automatic optical music recognition on a photo. The sheet photo is the visual reference and the player enters the pitches by tapping noteheads (or imports MusicXML). It checks pitches, not note lengths, rhythm, dynamics, or expression. Key signatures must be accounted for manually with the accidental selector. MusicXML import handles ordinary pitched notes and `<chord/>` groups but is a deliberately lightweight importer; review the imported note path, especially for multi-voice or complex scores.
-
-The listening engine is a browser dependency loaded from jsDelivr (`@markusstrasser/pitchplease` 3.1.0), using its piano model. An internet connection is needed the first time it loads. As with any microphone pitch detector, very soft notes, room noise, reverberation, and overlapping instruments can affect accuracy.
+The app checks pitch only. It does not check note lengths, rhythm, dynamics, expression, or key signatures. Accidentals must be entered manually. Microphone pitch detection can be affected by room noise, reverberation, very soft notes, or overlapping sounds.
 
 ## Files
 

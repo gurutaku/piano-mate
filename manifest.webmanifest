@@ -1,7 +1,7 @@
 {
   "name": "Piano Pal – Your little music coach",
   "short_name": "Piano Pal",
-  "description": "A friendly piano practice coach that listens for notes and gives instant feedback.",
+  "description": "A friendly piano practice coach with an interactive treble and bass staff.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
