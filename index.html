@@ -69,6 +69,44 @@
     footer{text-align:center;font-size:11px;color:#8e9891;margin-top:23px}.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;pointer-events:none;background:#243b42;color:#fff;padding:11px 15px;border-radius:12px;box-shadow:var(--shadow);font-size:13px;font-weight:800;z-index:10;transition:.2s;max-width:calc(100vw - 32px);text-align:center}.toast.show{opacity:1;transform:translate(-50%,0)}
     @media(max-width:850px){.layout{grid-template-columns:1fr}.right-stack{position:static}.practice-staff-shell{min-height:0}.practice-panel{order:-1}}
     @media(max-width:560px){.app{padding:11px 11px calc(28px + env(safe-area-inset-bottom))}.header-pill{display:none}header{padding:8px 2px 15px}.brand-mark{width:42px;height:42px}.hero{padding:18px;border-radius:20px}.hero-note{display:none}.panel{padding:15px;border-radius:18px}.editor-toolbar{align-items:stretch}.clef-tabs{flex:1}.clef-tab{flex:1;padding:8px 6px}.field{min-width:115px}.action-row .btn{flex:1}.tips-grid{gap:6px}.tip-card{padding:9px 5px}.practice-actions .btn{padding:11px 9px;font-size:12px}}
+
+    /* Grand-staff timeline editor and practice strip */
+    .editor-toolbar{margin-bottom:10px}
+    .accidental-field{max-width:260px;flex:0 1 260px}
+    .staff-shell{padding:8px;overflow:hidden}
+    .editor-staff-shell{overflow:hidden}
+    .staff-viewport,.practice-viewport{width:100%;min-width:0;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:thin;scrollbar-color:#b9c8bf transparent}
+    .staff-viewport{touch-action:pan-x}
+    #composerStaff,#practiceStaff{display:block;max-width:none;min-width:0;flex:none;height:auto;overflow:visible}
+    #composerStaff{touch-action:pan-x;user-select:none;-webkit-user-select:none;cursor:crosshair}
+    #composerStaff .staff-line{stroke-width:2.4}
+    #composerStaff .clef-mark{font-size:132px}
+    #practiceStaff{touch-action:pan-x}
+    .practice-staff-shell{padding:8px;overflow:hidden}
+    .practice-viewport{border-radius:11px}
+    .chord-guide{stroke:#b0bdb5;stroke-width:2.8;stroke-dasharray:4 7;stroke-linecap:round;opacity:.95}
+    .practice-panel .chord-guide{stroke:#b8d4c9;stroke-width:3;stroke-dasharray:4 7}
+    .notehead.saved{fill:#277c76;stroke:#164e49}
+    .notehead.draft{fill:#69b99f;stroke:#1c6b60}
+    .notehead.completed{fill:#54d69c;stroke:#d8ffea;stroke-width:3;filter:drop-shadow(0 0 5px rgba(84,214,156,.35))}
+    .note-accidental.completed{fill:#9df1c5}
+    .notehead.future{fill:#a9c2b8;stroke:#e3f0e9;opacity:.88}
+    .note-accidental.future{fill:#d8e7df}
+    .notehead.current{fill:#ffd166;stroke:#fff4c8;stroke-width:3}
+    .note-accidental.current{fill:#fff1c9}
+    .practice-panel .notehead.completed{fill:#54d69c;stroke:#e2fff0}
+    .practice-panel .notehead.future{fill:#8da9a0;stroke:#d5e4dc}
+    .practice-panel .notehead.current{fill:#ffd166;stroke:#fff4c8}
+    .practice-panel .note-accidental.current{fill:#fff1c9}
+    .practice-panel .notehead.wrong{fill:#ff786c;stroke:#fff1eb;stroke-width:3.5}
+    .editor-status{margin-top:9px}
+    @media(max-width:560px){
+      .accidental-field{max-width:none;flex:1 1 100%}
+      .editor-staff-shell{padding:6px}
+      .practice-staff-shell{padding:6px}
+      .practice-hint{margin-top:8px}
+    }
+
   </style>
 </head>
 <body>
@@ -79,7 +117,7 @@
     </header>
 
     <section class="hero">
-      <div class="hero-copy"><div class="eyebrow">Create · Practise · Shine</div><h2>Let’s make every note count!</h2><p>Place notes on the treble or bass staff, build a melody or chord, then play it on your piano. Piano Pal will move along as you get each note right.</p></div>
+      <div class="hero-copy"><div class="eyebrow">Create · Practise · Shine</div><h2>Let’s make every note count!</h2><p>Place notes on the grand staff, build a melody or chords, then play them on your piano. Piano Pal will move along as you get each note right.</p></div>
       <div class="hero-note" aria-hidden="true">♪</div>
     </section>
 
@@ -87,15 +125,11 @@
       <div class="left-stack">
         <section class="panel">
           <h3><span class="step">1</span>Build your music</h3>
-          <p class="panel-intro">Drag up or down on the staff to place a note. Choose its accidental first, then add it to your music path.</p>
+          <p class="panel-intro">Drag up or down to choose each pitch on the grand staff. Place notes in the same column to make a chord, or in separate columns to make the next notes.</p>
 
           <div class="editor-toolbar">
-            <div class="clef-tabs" role="group" aria-label="Choose clef">
-              <button class="clef-tab active" id="trebleTab" type="button" aria-pressed="true">𝄞 Treble</button>
-              <button class="clef-tab" id="bassTab" type="button" aria-pressed="false">𝄢 Bass</button>
-            </div>
-            <div class="field">
-              <label class="control-label" for="accidentalSelect">Accidental</label>
+            <div class="field accidental-field">
+              <label class="control-label" for="accidentalSelect">Accidental for new notes</label>
               <select id="accidentalSelect">
                 <option value="0" selected>Natural (no sign)</option>
                 <option value="1">♯ Sharp</option>
@@ -104,40 +138,29 @@
             </div>
           </div>
 
-          <div class="staff-shell">
-            <div id="composerSurface" aria-label="Drag on the music staff to position a note">
-              <svg id="composerStaff" viewBox="0 0 560 440" role="img" aria-label="Large interactive music staff"></svg>
+          <div class="staff-shell editor-staff-shell">
+            <div id="composerViewport" class="staff-viewport" aria-label="Scrollable grand staff editor">
+              <svg id="composerStaff" viewBox="0 0 760 580" role="img" aria-label="Interactive treble and bass grand staff"></svg>
             </div>
           </div>
-          <div class="editor-status"><span class="status-dot" id="selectionDot"></span><span class="hint" id="editorHint" style="margin:0">Drag on the staff to position your first note.</span></div>
+          <div class="editor-status"><span class="status-dot" id="selectionDot"></span><span class="hint" id="editorHint" style="margin:0">Tap a column and drag vertically to place notes. Swipe left or right to move along the staff. Same-column notes make a chord; tap a notehead to remove it.</span></div>
           <div class="action-row">
-            <button class="btn gold" id="chordToggle" type="button" aria-pressed="false">＋ Build a chord</button>
+            <button class="btn danger" id="clearNotesBtn" type="button" disabled>Clear all</button>
             <span class="spacer"></span>
-            <button class="btn ghost" id="cancelChordBtn" type="button" disabled>Cancel</button>
-            <button class="btn primary" id="addBtn" type="button" disabled>Add note</button>
+            <button class="btn primary" id="addBtn" type="button" disabled>Add notes</button>
           </div>
-          <p class="hint" id="composerHelp">For a chord, choose Build a chord, place each note on the staff (switch clefs for both hands), then select Add chord.</p>
         </section>
 
-        <section class="panel">
-          <div class="sequence-head">
-            <div><h3><span class="step">2</span>Your music path</h3><p class="panel-intro" style="margin-bottom:0">Each row is one note or one chord, in playing order.</p></div>
-            <span class="count-pill" id="eventCount">0 steps</span>
-          </div>
-          <div class="event-list" id="eventList"><div class="empty-seq">Your music path is empty.<br>Place a note on the staff above to begin.</div></div>
-          <div class="action-row" style="justify-content:space-between;align-items:center">
-            <span class="hint" style="margin:0">Remove any step with the × button.</span>
-            <button class="btn danger" id="clearNotesBtn" type="button" disabled>Clear all</button>
-          </div>
-        </section>
       </div>
 
       <div class="right-stack">
         <section class="panel practice-panel">
-          <h3><span class="step" style="background:#48636a;color:#fff">3</span>Play with Piano Pal</h3>
-          <p class="panel-intro">Play the note or chord shown below. Get it right to move to the next one.</p>
+          <h3><span class="step" style="background:#48636a;color:#fff">2</span>Play with Piano Pal</h3>
+          <p class="panel-intro">Your music is shown from left to right. Before starting, scroll to preview it; during practice, the next note stays at the right.</p>
           <div class="practice-staff-shell">
-            <svg id="practiceStaff" viewBox="0 0 560 700" role="img" aria-label="Current note or chord on the grand staff"></svg>
+            <div id="practiceViewport" class="practice-viewport" aria-label="Scrollable practice grand staff">
+              <svg id="practiceStaff" viewBox="0 0 760 580" role="img" aria-label="Your music on the grand staff"></svg>
+            </div>
           </div>
           <div class="progress-wrap">
             <div class="progress-meta"><span>Practice progress</span><span id="progressCount">0 / 0</span></div>
@@ -161,15 +184,15 @@
         <section class="panel">
           <h3>A tiny practice routine</h3>
           <div class="tips-grid">
-            <div class="tip-card"><div>🎼</div><strong>Place</strong><span>Drag each note onto the staff.</span></div>
+            <div class="tip-card"><div>🎼</div><strong>Place</strong><span>Drag notes onto either staff.</span></div>
             <div class="tip-card"><div>🎹</div><strong>Play</strong><span>Match the note or chord shown.</span></div>
-            <div class="tip-card"><div>🌟</div><strong>Shine</strong><span>Keep going until the path is complete.</span></div>
+            <div class="tip-card"><div>🌟</div><strong>Shine</strong><span>Watch each finished note turn green.</span></div>
           </div>
-          <p class="hint">Piano Pal checks pitch only. It does not check note lengths, rhythm, dynamics, or expression. Add accidentals manually to match your music.</p>
+          <p class="hint">Piano Pal checks pitch only. It does not check note lengths, rhythm, dynamics, or expression. Choose accidentals before placing each note.</p>
         </section>
       </div>
     </div>
-    <footer>Made for curious little musicians · Your practice path stays on this device</footer>
+    <footer>Made for curious little musicians · Your music stays on this device</footer>
   </main>
   <div class="toast" id="toast" role="status"></div>
 
