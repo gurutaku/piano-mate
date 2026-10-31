@@ -1,15 +1,6 @@
 <!doctype html>
 <html lang="en">
 <head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ERPMF4T7YG"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag() { dataLayer.push(arguments); }
-        gtag('js', new Date());
-
-        gtag('config', 'G-ERPMF4T7YG');
-    </script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#f6f1e8">
@@ -49,14 +40,14 @@
     .field{min-width:140px;flex:1}.control-label{font-size:11px;font-weight:850;letter-spacing:.7px;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px}
     select{width:100%;border:1px solid var(--line);border-radius:11px;background:#fff;padding:10px 11px;color:var(--ink);min-height:42px}
     .clef-tabs{display:flex;gap:6px;background:#f0ede6;padding:4px;border-radius:13px}.clef-tab{border:0;background:transparent;color:#68777d;padding:9px 13px;border-radius:10px;font-size:13px;font-weight:850;min-height:38px}.clef-tab.active{background:#fff;color:var(--teal-dark);box-shadow:0 2px 7px rgba(36,51,59,.10)}
-    .staff-shell{background:linear-gradient(180deg,#fffefa,#fbf8f0);border:1px solid #e3dac9;border-radius:18px;padding:7px;overflow:hidden;box-shadow:inset 0 1px 0 rgba(255,255,255,.9)}
+     .staff-shell{background:linear-gradient(180deg,#fffefa,#fbf8f0);border:1px solid #e3dac9;border-radius:18px;padding:9px;overflow:hidden;box-shadow:inset 0 1px 0 rgba(255,255,255,.9)}
     #composerSurface{touch-action:none;user-select:none;-webkit-user-select:none;cursor:crosshair;position:relative}
     #composerStaff{display:block;width:100%;height:auto;overflow:visible;touch-action:none}
-    .staff-line{stroke:#39474a;stroke-width:1.5}.ledger-line{stroke:#39474a;stroke-width:1.4}.clef-mark{font-family:"Noto Music","Bravura","Segoe UI Symbol",serif;fill:#243b42;font-size:76px}
-    .staff-label{font-size:12px;font-weight:800;fill:#74817c;letter-spacing:.6px}.staff-hint{font-size:13px;fill:#9aa49e;font-weight:650}
-    .notehead{fill:#277c76;stroke:#164e49;stroke-width:1.5}.notehead.preview{fill:#ffd166;stroke:#9a7522;stroke-width:2.3;filter:drop-shadow(0 2px 2px rgba(32,47,49,.22))}.notehead.draft{fill:#63b7a0;stroke:#1c6b60;stroke-width:1.8}.notehead.wrong{fill:#f07869;stroke:#fff4ee;stroke-width:2.5;filter:drop-shadow(0 0 5px rgba(240,120,105,.75))}
-    .note-accidental{font-family:"Segoe UI Symbol",serif;font-size:25px;font-weight:700;fill:#24333b;text-anchor:middle}.note-accidental.preview{fill:#966e16}.note-accidental.wrong{fill:#ffb3a8}
-    .preview-ring{fill:none;stroke:#e5b84c;stroke-width:2;stroke-dasharray:4 4}.staff-separator{stroke:#e5ddcf;stroke-width:1}
+    .staff-line{stroke:#39474a;stroke-width:2.2}.ledger-line{stroke:#39474a;stroke-width:2}.clef-mark{font-family:"Noto Music","Bravura","Segoe UI Symbol",serif;fill:#243b42;font-size:132px}
+    .staff-label{font-size:16px;font-weight:850;fill:#74817c;letter-spacing:.8px}.staff-hint{font-size:17px;fill:#9aa49e;font-weight:650}
+    .notehead{fill:#277c76;stroke:#164e49;stroke-width:2.3}.notehead.preview{fill:#ffd166;stroke:#9a7522;stroke-width:3;filter:drop-shadow(0 3px 3px rgba(32,47,49,.22))}.notehead.draft{fill:#63b7a0;stroke:#1c6b60;stroke-width:2.5}.notehead.wrong{fill:#f07869;stroke:#fff4ee;stroke-width:3;filter:drop-shadow(0 0 6px rgba(240,120,105,.75))}
+    .note-accidental{font-family:"Segoe UI Symbol",serif;font-size:40px;font-weight:750;fill:#24333b;text-anchor:middle}.note-accidental.preview{fill:#966e16}.note-accidental.wrong{fill:#ffb3a8}
+    .preview-ring{fill:none;stroke:#e5b84c;stroke-width:2.8;stroke-dasharray:6 5}.staff-separator{stroke:#e5ddcf;stroke-width:1.5}
     .action-row{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:13px}.action-row .spacer{flex:1}
     .btn{border:0;border-radius:12px;padding:11px 15px;font-size:13px;font-weight:850;transition:transform .12s,background .15s;display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:42px}
     .btn:active{transform:translateY(1px)}.btn.primary{background:var(--teal);color:white;box-shadow:0 4px 0 var(--teal-dark)}.btn.primary:hover{background:var(--teal-dark)}
@@ -67,65 +58,16 @@
     .event-row{border:1px solid var(--line);border-radius:13px;padding:9px 10px;display:flex;align-items:center;gap:9px;background:#fff}.event-num{width:25px;height:25px;flex:0 0 25px;display:grid;place-items:center;border-radius:8px;background:#f4f1e9;color:#84775f;font-size:11px;font-weight:900}
     .event-notes{display:flex;align-items:center;gap:6px;flex:1;min-width:0;flex-wrap:wrap}.note-chip{display:inline-flex;align-items:center;gap:4px;border-radius:9px;background:#eff6f1;color:#285d53;padding:6px 8px;font-size:12px;font-weight:850}.note-chip small{font-size:9px;opacity:.65;text-transform:uppercase}.remove-event{width:28px;height:28px;border:0;border-radius:8px;background:#fff0ed;color:#ac554b;font-weight:900;font-size:17px}
     .right-stack{position:sticky;top:12px}.practice-panel{background:#243b42;color:#fff;border:0;overflow:hidden;position:relative}.practice-panel:after{content:"♪";position:absolute;right:13px;top:-28px;font-size:120px;color:rgba(255,255,255,.055);pointer-events:none}.practice-panel h3{color:#fff}.practice-panel .panel-intro{color:#c7d4d0}
-    .practice-staff-shell{border:1px solid rgba(255,255,255,.15);background:rgba(8,24,29,.35);border-radius:17px;padding:9px;margin:15px 0;position:relative;z-index:1;min-height:260px;display:flex;align-items:center}
-    #practiceStaff{display:block;width:100%;height:auto;overflow:visible}.practice-panel .staff-line{stroke:#d7e2dc;stroke-width:1.4}.practice-panel .ledger-line{stroke:#d7e2dc;stroke-width:1.3}.practice-panel .clef-mark{fill:#e8f1ea}.practice-panel .notehead{fill:#ffd166;stroke:#fff4c8;stroke-width:1.7}.practice-panel .note-accidental{fill:#fff1c9}.practice-panel .notehead.wrong{fill:#ff786c;stroke:#fff1eb;stroke-width:2.5}.practice-panel .note-accidental.wrong{fill:#ffaaa1}
+    .practice-staff-shell{border:1px solid rgba(255,255,255,.15);background:rgba(8,24,29,.35);border-radius:17px;padding:10px;margin:15px 0;position:relative;z-index:1;min-height:0;display:flex;align-items:center}
+    #practiceStaff{display:block;width:100%;height:auto;overflow:visible}.practice-panel .staff-line{stroke:#d7e2dc;stroke-width:2}.practice-panel .ledger-line{stroke:#d7e2dc;stroke-width:1.9}.practice-panel .clef-mark{fill:#e8f1ea}.practice-panel .notehead{fill:#ffd166;stroke:#fff4c8;stroke-width:2.8}.practice-panel .note-accidental{fill:#fff1c9}.practice-panel .notehead.wrong{fill:#ff786c;stroke:#fff1eb;stroke-width:3.5}.practice-panel .note-accidental.wrong{fill:#ffaaa1}
     .practice-panel .staff-hint{fill:#9eb3ae}.practice-panel .staff-label{fill:#9eb3ae}
     .progress-wrap{position:relative;z-index:1}.progress-meta{display:flex;justify-content:space-between;color:#c6d6d1;font-size:12px;margin-bottom:7px}.progress-track{height:9px;border-radius:99px;background:rgba(255,255,255,.13);overflow:hidden}.progress-fill{height:100%;width:0;background:var(--yellow);border-radius:99px;transition:width .2s}
     .practice-actions{display:flex;gap:9px;position:relative;z-index:1;margin-top:15px}.practice-actions .btn{flex:1}.practice-panel .btn.primary{background:var(--yellow);color:#4c4025;box-shadow:0 4px 0 #d5a83c}.practice-panel .btn.ghost{color:#e4eeea;border-color:rgba(255,255,255,.25)}
     .practice-hint{font-size:12px;line-height:1.45;color:#b5c8c3;text-align:center;min-height:18px;margin:11px 0 0;position:relative;z-index:1}
     .settings{margin-top:16px;border-top:1px solid rgba(255,255,255,.13);padding-top:12px;position:relative;z-index:1}.settings summary{cursor:pointer;color:#dbe7e2;font-size:12px;font-weight:800}.settings p{color:#b5c8c3;font-size:12px;line-height:1.5}.settings .control-label{color:#b5c8c3}
     .tips-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:13px}.tip-card{background:#f6f3eb;border-radius:13px;padding:12px 9px;text-align:center}.tip-card div{font-size:21px}.tip-card strong{display:block;font-size:12px;margin:5px 0 3px}.tip-card span{font-size:11px;line-height:1.35;color:var(--muted);display:block}
-    .games-hub-link {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 7px;
-      padding: 9px 14px;
-      border: 1px solid #f2c9dd;
-      border-radius: 999px;
-      background: linear-gradient(135deg, #fff5cf, #ffe8f1);
-      box-shadow: 0 3px 0 #ecc8dc;
-      color: #694978;
-      font-size: 14px;
-      font-weight: 850;
-      text-decoration: none;
-      white-space: nowrap;
-      transition: transform .12s, box-shadow .12s
-    }
-
-    .games-hub-link:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 0 #ecc8dc
-    }
-
-    .games-hub-link:focus-visible {
-      outline: 3px solid #9c8cff;
-      outline-offset: 3px
-    }
-
-    .header-games-link {
-      display: flex;
-      justify-content: flex-end;
-      margin-bottom: 8px
-    }
-      .games-hub-link {
-        padding: 9px 11px
-      }
-
-      .games-hub-label {
-        display: none
-      }
-    /* Footer */
-        footer {
-        text-align: center;
-        padding: 35px 24px;
-        color: #78909c;
-        font-size: 0.9rem;
-        }
-
-        footer strong {
-        color: #455a64;
-        }    @media(max-width:850px){.layout{grid-template-columns:1fr}.right-stack{position:static}.practice-staff-shell{min-height:0}.practice-panel{order:-1}}
+    footer{text-align:center;font-size:11px;color:#8e9891;margin-top:23px}.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;pointer-events:none;background:#243b42;color:#fff;padding:11px 15px;border-radius:12px;box-shadow:var(--shadow);font-size:13px;font-weight:800;z-index:10;transition:.2s;max-width:calc(100vw - 32px);text-align:center}.toast.show{opacity:1;transform:translate(-50%,0)}
+    @media(max-width:850px){.layout{grid-template-columns:1fr}.right-stack{position:static}.practice-staff-shell{min-height:0}.practice-panel{order:-1}}
     @media(max-width:560px){.app{padding:11px 11px calc(28px + env(safe-area-inset-bottom))}.header-pill{display:none}header{padding:8px 2px 15px}.brand-mark{width:42px;height:42px}.hero{padding:18px;border-radius:20px}.hero-note{display:none}.panel{padding:15px;border-radius:18px}.editor-toolbar{align-items:stretch}.clef-tabs{flex:1}.clef-tab{flex:1;padding:8px 6px}.field{min-width:115px}.action-row .btn{flex:1}.tips-grid{gap:6px}.tip-card{padding:9px 5px}.practice-actions .btn{padding:11px 9px;font-size:12px}}
   </style>
 </head>
@@ -133,7 +75,7 @@
   <main class="app">
     <header>
       <div class="brand"><div class="brand-mark" aria-hidden="true">🎹</div><div><h1>Piano Pal</h1><div class="tagline">Your little music coach</div></div></div>
-      <div class="top-actions"><a class="games-hub-link" href="https://gurutaku.ca/coolgames/" aria-label="Back to Gurutaku Cool Games" title="Back to Gurutaku Cool Games"><span aria-hidden="true">🎮</span><span>More Games</span></a></div>
+      <div class="header-pill">A little practice goes a long way ✨</div>
     </header>
 
     <section class="hero">
@@ -145,7 +87,8 @@
       <div class="left-stack">
         <section class="panel">
           <h3><span class="step">1</span>Build your music</h3>
-          <p class="panel-intro">Drag up or down on the staff to place a note. Choose its accidental first, then add it to your music path.</p>
+          <p class="panel-intro">To build a note - <b>Step 1:</b> Choose the clef and accidental for your note. <b>Step 2:</b> Drag up or down on the staff to place a note. <b>Step 3:</b> Add the note to your music path.</p>
+          <p class="panel-intro">To build a chord - <b>Step 1:</b> Choose "Build a chord" mode, then choose the clef and accidental for each note. <b>Step 2:</b> Drag up or down on the staff to place a note. <b>Step 3:</b> Add the chord to your music path.</p>
 
           <div class="editor-toolbar">
             <div class="clef-tabs" role="group" aria-label="Choose clef">
@@ -164,7 +107,7 @@
 
           <div class="staff-shell">
             <div id="composerSurface" aria-label="Drag on the music staff to position a note">
-              <svg id="composerStaff" viewBox="0 0 760 290" role="img" aria-label="Large interactive music staff"></svg>
+              <svg id="composerStaff" viewBox="0 0 560 440" role="img" aria-label="Large interactive music staff"></svg>
             </div>
           </div>
           <div class="editor-status"><span class="status-dot" id="selectionDot"></span><span class="hint" id="editorHint" style="margin:0">Drag on the staff to position your first note.</span></div>
@@ -174,7 +117,6 @@
             <button class="btn ghost" id="cancelChordBtn" type="button" disabled>Cancel</button>
             <button class="btn primary" id="addBtn" type="button" disabled>Add note</button>
           </div>
-          <p class="hint" id="composerHelp">For a chord, choose Build a chord, place each note on the staff (switch clefs for both hands), then select Add chord.</p>
         </section>
 
         <section class="panel">
@@ -195,7 +137,7 @@
           <h3><span class="step" style="background:#48636a;color:#fff">3</span>Play with Piano Pal</h3>
           <p class="panel-intro">Play the note or chord shown below. Get it right to move to the next one.</p>
           <div class="practice-staff-shell">
-            <svg id="practiceStaff" viewBox="0 0 760 350" role="img" aria-label="Current note or chord on the grand staff"></svg>
+            <svg id="practiceStaff" viewBox="0 0 560 700" role="img" aria-label="Current note or chord on the grand staff"></svg>
           </div>
           <div class="progress-wrap">
             <div class="progress-meta"><span>Practice progress</span><span id="progressCount">0 / 0</span></div>
@@ -227,12 +169,7 @@
         </section>
       </div>
     </div>
-        <!-- Footer -->
-        <footer>
-          <strong>🎮 Gurutaku</strong> — Make Learning Fun.
-          <br>
-          © 2026 Gurutaku. All rights reserved.
-        </footer>
+    <footer>Made for curious little musicians · Your practice path stays on this device</footer>
   </main>
   <div class="toast" id="toast" role="status"></div>
 

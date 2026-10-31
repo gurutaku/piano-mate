@@ -3,10 +3,10 @@
     const LETTER_INDEX = {C:0,D:1,E:2,F:3,G:4,A:5,B:6};
     const NATURAL_PC = {C:0,D:2,E:4,F:5,G:7,A:9,B:11};
     const ACCIDENTAL_GLYPH = {'-1':'♭','0':'♮','1':'♯'};
-    const EDITOR = {viewW:760,viewH:290,left:85,right:730,top:92,bottom:164,stepY:9,centerX:455};
+    const EDITOR = {viewW:560,viewH:440,left:86,right:535,top:156,bottom:284,stepY:16,centerX:315};
     const PRACTICE = {
-      viewW:760,viewH:350,left:94,right:730,
-      treble:{top:42,bottom:114},bass:{top:226,bottom:298},stepY:9,centerX:414
+      viewW:560,viewH:700,left:86,right:535,
+      treble:{top:156,bottom:284},bass:{top:430,bottom:558},stepY:16,centerX:315
     };
 
     let events = [];
@@ -71,7 +71,7 @@
       const baseY = note.clef==='treble' ? staff.treble.bottom : staff.bass.bottom;
       return baseY - note.step*staff.stepY;
     }
-    function ledgerMarkup(x,y,baseY,stepY,step,cls='ledger-line',length=34) {
+    function ledgerMarkup(x,y,baseY,stepY,step,cls='ledger-line',length=58) {
       let html='';
       if (step>8) {
         for (let s=10;s<=step;s+=2) { const yy=baseY-s*stepY; html+=`<line class="${cls}" x1="${x-length/2}" y1="${yy}" x2="${x+length/2}" y2="${yy}"/>`; }
@@ -83,22 +83,21 @@
     function noteMarkup(note, x, y, state='', staff=null) {
       const cls=state?` ${state}`:'';
       const glyph=ACCIDENTAL_GLYPH[String(note.accidental)]||'';
-      const accidentalMarkup = note.accidental===0 ? '' : `<text class="note-accidental${cls}" x="${x-24}" y="${y+8}">${glyph}</text>`;
+      const accidentalMarkup = note.accidental===0 ? '' : `<text class="note-accidental${cls}" x="${x-38}" y="${y+13}">${glyph}</text>`;
       const ledger=staff ? ledgerMarkup(x,y, note.clef==='treble'?staff.treble.bottom:staff.bass.bottom,staff.stepY,note.step) : '';
       return `${ledger}
         ${accidentalMarkup}
-        ${state==='preview'?`<ellipse class="preview-ring" cx="${x}" cy="${y}" rx="17" ry="13"/>`:''}
-        <ellipse class="notehead${cls}" cx="${x}" cy="${y}" rx="12" ry="8" transform="rotate(-18 ${x} ${y})"/>`;
+        ${state==='preview'?`<ellipse class="preview-ring" cx="${x}" cy="${y}" rx="30" ry="22"/>`:''}
+        <ellipse class="notehead${cls}" cx="${x}" cy="${y}" rx="21" ry="14" transform="rotate(-18 ${x} ${y})"/>`;
     }
     function drawEditorStaff() {
       const svg=$('composerStaff');
       const base={top:EDITOR.top,bottom:EDITOR.bottom,stepY:EDITOR.stepY};
-      let html=`<rect x="0" y="0" width="760" height="290" rx="13" fill="#fffefa"/>
-        <text class="staff-label" x="${EDITOR.left}" y="34">${activeClef==='treble'?'TREBLE CLEF':'BASS CLEF'}</text>
-        <text class="clef-mark" x="22" y="${activeClef==='treble'?157:155}">${activeClef==='treble'?'𝄞':'𝄢'}</text>`;
-      for(let i=0;i<5;i++){const y=EDITOR.top+i*18;html+=`<line class="staff-line" x1="${EDITOR.left}" y1="${y}" x2="${EDITOR.right}" y2="${y}"/>`;}
-      html+=`<line class="staff-separator" x1="${EDITOR.left}" y1="248" x2="${EDITOR.right}" y2="248"/>
-        <text class="staff-hint" x="${EDITOR.left}" y="274">Drag up for higher notes · drag down for lower notes</text>`;
+      let html=`<rect x="0" y="0" width="${EDITOR.viewW}" height="${EDITOR.viewH}" rx="13" fill="#fffefa"/>
+        <text class="staff-label" x="${EDITOR.left}" y="48">${activeClef==='treble'?'TREBLE CLEF':'BASS CLEF'}</text>
+        <text class="clef-mark" x="5" y="${EDITOR.bottom+12}">${activeClef==='treble'?'𝄞':'𝄢'}</text>`;
+      for(let i=0;i<5;i++){const y=EDITOR.top+i*EDITOR.stepY*2;html+=`<line class="staff-line" x1="${EDITOR.left}" y1="${y}" x2="${EDITOR.right}" y2="${y}"/>`;}
+      
       // Keep the in-progress note visible in both single-note and chord modes.
       // In chord mode the committed draft notes share one x-position, while the
       // live preview remains visible as the player drags to choose its pitch.
@@ -114,7 +113,7 @@
       });
       if(!shown.length){
         const ghostY=EDITOR.bottom-4*EDITOR.stepY;
-        html+=`<ellipse cx="${EDITOR.centerX}" cy="${ghostY}" rx="12" ry="8" fill="#d6ddd7" stroke="#b9c6bd" stroke-width="1.5" stroke-dasharray="3 3" transform="rotate(-18 ${EDITOR.centerX} ${ghostY})"/>`;
+        html+=`<ellipse cx="${EDITOR.centerX}" cy="${ghostY}" rx="21" ry="14" fill="#d6ddd7" stroke="#b9c6bd" stroke-width="2" stroke-dasharray="5 4" transform="rotate(-18 ${EDITOR.centerX} ${ghostY})"/>`;
       }
       svg.innerHTML=html;
       $('addBtn').disabled=chordMode ? chordDraft.length<2 : !selectedNote;
@@ -196,21 +195,21 @@
         let x=staff.centerX;
         // Adjacent seconds alternate slightly left and right so noteheads remain distinct.
         const close=sameClef.some(other=>other!==note&&Math.abs(other.step-note.step)===1);
-        if(close)x+=(note.step%2===0?-9:9);
-        if(sameClefEarlier)x+=sameClefEarlier*15;
+        if(close)x+=(note.step%2===0?-16:16);
+        if(sameClefEarlier)x+=sameClefEarlier*25;
         const y=(note.clef==='treble'?staff.treble.bottom:staff.bass.bottom)-note.step*staff.stepY;
         html+=noteMarkup(note,x,y,state,staff);
       });
       return html;
     }
     function drawPracticeBase() {
-      const s=PRACTICE;let html='<rect x="0" y="0" width="760" height="350" rx="13" fill="transparent"/>';
-      html+=`<text class="clef-mark" x="25" y="${s.treble.bottom+7}">𝄞</text><text class="clef-mark" x="25" y="${s.bass.bottom+5}">𝄢</text>`;
+      const s=PRACTICE;let html=`<rect x="0" y="0" width="${s.viewW}" height="${s.viewH}" rx="13" fill="transparent"/>`;
+      html+=`<text class="clef-mark" x="5" y="${s.treble.bottom+10}">𝄞</text><text class="clef-mark" x="5" y="${s.bass.bottom+10}">𝄢</text>`;
       for(let i=0;i<5;i++){
-        const ty=s.treble.top+i*18,by=s.bass.top+i*18;
+        const ty=s.treble.top+i*s.stepY*2,by=s.bass.top+i*s.stepY*2;
         html+=`<line class="staff-line" x1="${s.left}" y1="${ty}" x2="${s.right}" y2="${ty}"/><line class="staff-line" x1="${s.left}" y1="${by}" x2="${s.right}" y2="${by}"/>`;
       }
-      html+=`<line class="staff-separator" x1="${s.left}" y1="${s.treble.bottom+54}" x2="${s.right}" y2="${s.treble.bottom+54}"/>`;
+      html+=`<line class="staff-separator" x1="${s.left}" y1="${s.treble.bottom+72}" x2="${s.right}" y2="${s.treble.bottom+72}"/>`;
       return html;
     }
     function renderPracticeStaff() {
@@ -223,7 +222,7 @@
       }
       if(!target){
         const label=events.length&&currentIndex>=events.length?'All done!':'Add notes to begin';
-        html+=`<text class="staff-hint" x="${PRACTICE.centerX}" y="178" text-anchor="middle" style="font-size:17px;font-weight:800">${label}</text>`;
+        html+=`<text class="staff-hint" x="${PRACTICE.centerX}" y="350" text-anchor="middle" style="font-size:20px;font-weight:850">${label}</text>`;
       }
       svg.innerHTML=html;
     }
