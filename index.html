@@ -19,10 +19,10 @@
       --mint:#dff3e9;--rose:#ffe7e2;--shadow:0 12px 34px rgba(42,51,54,.08)
     }
     *{box-sizing:border-box}
-    html{background:var(--cream);scroll-behavior:smooth}
-    body{margin:0;color:var(--ink);font-family:ui-rounded,"SF Pro Rounded","Avenir Next",Avenir,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--cream);min-height:100vh}
-    button,input,select{font:inherit}button{cursor:pointer;touch-action:manipulation}
-    .app{max-width:1180px;margin:0 auto;padding:18px 18px 52px}
+    html{background:var(--cream);scroll-behavior:auto;width:100%;max-width:100%;overflow-x:hidden;-webkit-text-size-adjust:100%}
+    body{margin:0;width:100%;max-width:100%;overflow-x:hidden;color:var(--ink);font-family:ui-rounded,"SF Pro Rounded","Avenir Next",Avenir,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--cream);min-height:100vh}
+    button,input,select{font:inherit}select{font-size:16px}button{cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+    .app{width:100%;max-width:1180px;min-width:0;margin:0 auto;padding:18px 18px 52px}
     header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 2px 22px}
     .brand{display:flex;align-items:center;gap:12px}.brand-mark{width:46px;height:46px;border-radius:15px;background:var(--yellow);display:grid;place-items:center;font-size:26px;box-shadow:0 5px 0 #e8b94d}
     h1{font-size:clamp(24px,4vw,34px);line-height:1.05;margin:0;letter-spacing:-1.2px}.tagline{font-size:13px;color:var(--muted);margin-top:4px}
@@ -32,7 +32,8 @@
     .hero-copy{position:relative;z-index:1;max-width:740px}.eyebrow{text-transform:uppercase;letter-spacing:1.4px;font-size:11px;font-weight:850;color:var(--teal);margin-bottom:8px}
     .hero h2{font-size:clamp(23px,4vw,32px);margin:0 0 8px;letter-spacing:-.8px}.hero p{margin:0;color:var(--muted);line-height:1.55;max-width:680px}
     .hero-note{z-index:1;font-size:42px;transform:rotate(-10deg);background:#fff2c7;width:74px;height:74px;flex:0 0 auto;border-radius:23px;display:grid;place-items:center;border:2px solid #f4d98c}
-    .layout{display:grid;grid-template-columns:minmax(0,1.12fr) minmax(340px,.88fr);gap:18px;align-items:start}
+    .layout{display:grid;grid-template-columns:minmax(0,1.12fr) minmax(340px,.88fr);gap:18px;align-items:start;min-width:0;max-width:100%}
+    .left-stack,.right-stack{min-width:0;max-width:100%}
     .panel{background:var(--paper);border:1px solid var(--line);border-radius:22px;padding:20px;box-shadow:var(--shadow);min-width:0}.panel+.panel{margin-top:18px}
     .panel h3{font-size:18px;margin:0;letter-spacing:-.3px}.panel-intro{color:var(--muted);font-size:13px;line-height:1.5;margin:6px 0 15px}
     .step{display:inline-grid;place-items:center;width:25px;height:25px;border-radius:9px;background:#e3f1ed;color:var(--teal-dark);font-size:12px;font-weight:900;margin-right:8px;vertical-align:1px}
@@ -58,8 +59,8 @@
     .event-row{border:1px solid var(--line);border-radius:13px;padding:9px 10px;display:flex;align-items:center;gap:9px;background:#fff}.event-num{width:25px;height:25px;flex:0 0 25px;display:grid;place-items:center;border-radius:8px;background:#f4f1e9;color:#84775f;font-size:11px;font-weight:900}
     .event-notes{display:flex;align-items:center;gap:6px;flex:1;min-width:0;flex-wrap:wrap}.note-chip{display:inline-flex;align-items:center;gap:4px;border-radius:9px;background:#eff6f1;color:#285d53;padding:6px 8px;font-size:12px;font-weight:850}.note-chip small{font-size:9px;opacity:.65;text-transform:uppercase}.remove-event{width:28px;height:28px;border:0;border-radius:8px;background:#fff0ed;color:#ac554b;font-weight:900;font-size:17px}
     .right-stack{position:sticky;top:12px}.practice-panel{background:#243b42;color:#fff;border:0;overflow:hidden;position:relative}.practice-panel:after{content:"♪";position:absolute;right:13px;top:-28px;font-size:120px;color:rgba(255,255,255,.055);pointer-events:none}.practice-panel h3{color:#fff}.practice-panel .panel-intro{color:#c7d4d0}
-     .practice-staff-shell{border:1px solid rgba(255,255,255,.15);background:rgba(8,24,29,.35);border-radius:17px;padding:10px;margin:15px 0;position:relative;z-index:1;min-height:0;min-width:0;width:100%;max-width:100%;display:flex;align-items:center;justify-content:center;overflow:hidden}
-    #practiceStaff{display:block;width:100%;max-width:100%;min-width:0;flex:1 1 0;height:auto;overflow:hidden}.practice-panel .staff-line{stroke:#d7e2dc;stroke-width:2}.practice-panel .ledger-line{stroke:#d7e2dc;stroke-width:1.9}.practice-panel .clef-mark{fill:#e8f1ea}.practice-panel .notehead{fill:#ffd166;stroke:#fff4c8;stroke-width:2.8}.practice-panel .note-accidental{fill:#fff1c9}.practice-panel .notehead.wrong{fill:#ff786c;stroke:#fff1eb;stroke-width:3.5}.practice-panel .note-accidental.wrong{fill:#ffaaa1}
+     .practice-staff-shell{border:1px solid rgba(255,255,255,.15);background:rgba(8,24,29,.35);border-radius:17px;padding:10px;margin:15px 0;position:relative;z-index:1;min-height:0;min-width:0;width:100%;max-width:100%;display:block;overflow:hidden;contain:layout paint}
+    #practiceStaff{display:block;width:100%;max-width:none;min-width:0;flex:none;height:auto;overflow:visible}.practice-panel .staff-line{stroke:#d7e2dc;stroke-width:2}.practice-panel .ledger-line{stroke:#d7e2dc;stroke-width:1.9}.practice-panel .clef-mark{fill:#e8f1ea}.practice-panel .notehead{fill:#ffd166;stroke:#fff4c8;stroke-width:2.8}.practice-panel .note-accidental{fill:#fff1c9}.practice-panel .notehead.wrong{fill:#ff786c;stroke:#fff1eb;stroke-width:3.5}.practice-panel .note-accidental.wrong{fill:#ffaaa1}
     .practice-panel .staff-hint{fill:#9eb3ae}.practice-panel .staff-label{fill:#9eb3ae}
     .progress-wrap{position:relative;z-index:1}.progress-meta{display:flex;justify-content:space-between;color:#c6d6d1;font-size:12px;margin-bottom:7px}.progress-track{height:9px;border-radius:99px;background:rgba(255,255,255,.13);overflow:hidden}.progress-fill{height:100%;width:0;background:var(--yellow);border-radius:99px;transition:width .2s}
     .practice-actions{display:flex;gap:9px;position:relative;z-index:1;margin-top:15px}.practice-actions .btn{flex:1}.practice-panel .btn.primary{background:var(--yellow);color:#4c4025;box-shadow:0 4px 0 #d5a83c}.practice-panel .btn.ghost{color:#e4eeea;border-color:rgba(255,255,255,.25)}
@@ -82,15 +83,16 @@
     .page-arrow:before{content:"";display:block;width:0;height:0;border-top:6px solid transparent;border-bottom:6px solid transparent}
     .page-arrow.previous:before{border-right:8px solid currentColor;margin-left:-2px}
     .page-arrow.next:before{border-left:8px solid currentColor;margin-right:-2px}
-    .staff-viewport,.practice-viewport{width:100%;max-width:100%;min-width:0;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:thin;scrollbar-color:#b9c8bf transparent;overflow-anchor:none}
-    .staff-viewport{display:block;position:relative;overflow:hidden;touch-action:none;contain:layout paint;isolation:isolate}
-    .practice-viewport{overflow-x:auto}
+    .staff-viewport,.practice-viewport{display:block;width:100%;max-width:100%;min-width:0;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:thin;scrollbar-color:#b9c8bf transparent;overflow-anchor:none;box-sizing:border-box}
+    .staff-viewport{position:relative;overflow:hidden;touch-action:none;contain:layout paint;isolation:isolate}
+    .practice-viewport{position:relative;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;contain:layout paint;isolation:isolate}
     #composerStaff,#practiceStaff{display:block;max-width:none;min-width:0;flex:none;height:auto;overflow:visible}
     #composerStaff{width:100% !important;height:auto !important;max-width:100% !important;min-width:0 !important;flex:0 1 auto;aspect-ratio:760 / 580;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;cursor:crosshair;overflow:hidden}
     .editor-staff-shell{width:100%;max-width:100%;min-width:0;overflow:hidden;overflow-anchor:none}
     #composerStaff .staff-line{stroke-width:2.4}
     #composerStaff .clef-mark{font-size:132px}
     #practiceStaff{touch-action:pan-x}
+    #addBtn{touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
     .practice-staff-shell{padding:8px;overflow:hidden}
     .practice-viewport{border-radius:11px}
     .chord-guide{stroke:#b0bdb5;stroke-width:2.8;stroke-dasharray:4 7;stroke-linecap:round;opacity:.95}
@@ -373,15 +375,31 @@
       viewport.style.overflow='hidden';
     }
     function fitStaffSvg(svg, viewport, contentW, staff=STAFF) {
-      const available=Math.max(240,viewport.clientWidth||staff.viewW);
+      // Keep the growing practice score entirely inside its own horizontal
+      // scroller. Never let the score's intrinsic width contribute to the
+      // document width (Safari on small iPhones can otherwise auto-scale the
+      // page when another page of notes is added).
+      viewport.style.width='100%';
+      viewport.style.maxWidth='100%';
+      viewport.style.minWidth='0';
+      viewport.style.display='block';
+      viewport.style.overflowX='auto';
+      viewport.style.overflowY='hidden';
+      const rectWidth=viewport.getBoundingClientRect?.().width||0;
+      const measured=rectWidth||viewport.clientWidth||0;
+      const available=Math.max(1,Math.floor(measured||Math.min(staff.viewW,window.innerWidth||staff.viewW)));
       const scale=available/staff.viewW;
       const width=contentW*scale;
       const height=staff.viewH*scale;
       svg.setAttribute('viewBox',`0 0 ${contentW} ${staff.viewH}`);
       svg.setAttribute('width',String(width));
       svg.setAttribute('height',String(height));
+      svg.style.display='block';
       svg.style.width=`${width}px`;
       svg.style.height=`${height}px`;
+      svg.style.maxWidth='none';
+      svg.style.minWidth='0';
+      svg.style.flex='none';
       svg.dataset.scale=String(scale);
       svg.dataset.contentWidth=String(contentW);
     }
@@ -488,9 +506,10 @@
       $('progressCount').textContent=`${Math.min(currentIndex,events.length)} / ${events.length}`;
       $('progressFill').style.width=events.length?`${Math.min(100,currentIndex/events.length*100)}%`:'0%';
     }
-    function resetPractice() {
+    function resetPractice(renderStaff=true) {
       currentIndex=0;practiceViewStarted=false;resetAttempt();resetCarryover();wrongFlash=[];clearTimeout(wrongFlashTimer);
-      updateProgress();renderPracticeStaff();
+      updateProgress();
+      if(renderStaff)renderPracticeStaff();
       $('practiceViewport').scrollLeft=0;
       $('startBtn').textContent='🎹 Start practice';
       $('startBtn').disabled=!events.length||isPractising;
@@ -511,7 +530,9 @@
       });
       events=events.filter(ev=>ev.notes.length).sort((a,b)=>a.x-b.x);
       draftNotes=[];selectedNote=null;selectedHit=null;
-      resetPractice();drawEditorStaff();renderPracticeStaff();
+      // Update the small fixed editor and the practice strip once each. Avoid
+      // duplicate SVG resizes/reflows on iOS after adding a multi-page score.
+      resetPractice(false);drawEditorStaff();renderPracticeStaff();
       $('editorHint').textContent='Notes added. Use the arrows to move between staff pages, or start playing the sequence.';
       showToast('Notes added to the grand staff.');
     }
@@ -775,18 +796,10 @@
       if(selectedNote)selectedNote.accidental=Number($('accidentalSelect').value);
       drawEditorStaff();
     });
-    $('addBtn').addEventListener('click',event=>{
-      // Keep Safari from retaining focus on a small button after the editor
-      // redraws (a focus/scroll adjustment can look like a page zoom on iOS).
-      event.preventDefault();
-      const pageX=window.scrollX, pageY=window.scrollY;
+    $('addBtn').addEventListener('click',()=>{
+      // Do not blur controls or call window.scrollTo here. Safari can interpret
+      // programmatic focus/scroll corrections as a visual-viewport zoom.
       addDraftNotes();
-      requestAnimationFrame(()=>{
-        if(document.activeElement===$('addBtn'))$('addBtn').blur();
-        if(Math.abs(window.scrollX-pageX)>1||Math.abs(window.scrollY-pageY)>1){
-          window.scrollTo({left:pageX,top:pageY,behavior:'instant'});
-        }
-      });
     });
     $('clearNotesBtn').addEventListener('click',()=>{
       if(isPractising)stopPractice(false);
