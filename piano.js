@@ -11,6 +11,8 @@
     const PRACTICE = STAFF;
     const COLUMN_START = 160;
     const COLUMN_GAP = 112;
+    const PAGE_SLOTS = 6;
+    const PAGE_SPAN = COLUMN_GAP * PAGE_SLOTS;
     const SNAP_RADIUS = 43;
     const PRACTICE_START_X = STAFF.viewW - 112;
 
@@ -20,6 +22,7 @@
     let nextNoteId = 1;
     let selectedNote = null;
     let selectedHit = null;
+    let editorPageIndex = 0;
     let dragging = false;
     let dragMoved = false;
     let pointerStart = null;
@@ -133,6 +136,19 @@
       html+=`<line class="staff-separator" x1="${staff.left}" y1="${staff.treble.bottom+65}" x2="${right}" y2="${staff.treble.bottom+65}"/>`;
       return html;
     }
+    function fitEditorStaffSvg(svg, viewport, staff=STAFF) {
+      // Keep the editor on a fixed-size page. More notes create more pages,
+      // never a wider SVG that can change the apparent zoom on mobile Safari.
+      const available=Math.max(1,viewport.clientWidth||staff.viewW);
+      const scale=available/staff.viewW;
+      svg.setAttribute('viewBox',`0 0 ${staff.viewW} ${staff.viewH}`);
+      svg.setAttribute('width',String(staff.viewW));
+      svg.setAttribute('height',String(staff.viewH));
+      svg.style.width='100%';
+      svg.style.height='auto';
+      svg.dataset.scale=String(scale);
+      svg.dataset.contentWidth=String(staff.viewW);
+    }
     function fitStaffSvg(svg, viewport, contentW, staff=STAFF) {
       const available=Math.max(240,viewport.clientWidth||staff.viewW);
       const scale=available/staff.viewW;
@@ -146,10 +162,22 @@
       svg.dataset.scale=String(scale);
       svg.dataset.contentWidth=String(contentW);
     }
-    function staffContentWidth() {
-      const allX=[...events.map(ev=>ev.x),...draftNotes.map(note=>note.x),...(selectedNote?[selectedNote.x]:[])];
-      const maxX=allX.length?Math.max(...allX):COLUMN_START;
-      return Math.max(STAFF.viewW,Math.ceil((maxX+88)/40)*40);
+    function editorPageOffset() { return editorPageIndex * PAGE_SPAN; }
+    function editorLastUsedPage() {
+      const xs=[...events.map(ev=>ev.x),...draftNotes.map(note=>note.x),...(selectedNote?[selectedNote.x]:[])];
+      return xs.length?Math.max(0,Math.floor((Math.max(...xs)-COLUMN_START)/PAGE_SPAN)):0;
+    }
+    function updateEditorPageNav() {
+      $('composerPageLabel').textContent=`Page ${editorPageIndex+1}`;
+      $('composerPrevPage').disabled=editorPageIndex<=0;
+      // Permit one empty page beyond the latest page containing notes.
+      $('composerNextPage').disabled=editorPageIndex>=editorLastUsedPage()+1;
+    }
+    function changeEditorPage(delta) {
+      if(dragging||isPractising)return;
+      const next=Math.max(0,Math.min(editorLastUsedPage()+1,editorPageIndex+delta));
+      if(next===editorPageIndex)return;
+      editorPageIndex=next;selectedNote=null;selectedHit=null;drawEditorStaff();
     }
     function groupByColumn(notes) {
       const groups=new Map();
@@ -163,11 +191,14 @@
     function drawEditorStaff() {
       const svg=$('composerStaff');
       const viewport=$('composerViewport');
-      const contentW=staffContentWidth();
-      let html=drawGrandStaffBase(contentW,EDITOR,false);
+      const pageOffset=editorPageOffset();
+      const pageMin=pageOffset+COLUMN_START-1;
+      const pageMax=pageOffset+COLUMN_START+(PAGE_SLOTS-1)*COLUMN_GAP+1;
+      let html=drawGrandStaffBase(STAFF.viewW,EDITOR,false);
       const columns=new Map();
       const addToColumn=(note,state)=>{
-        const x=Math.round(note.x);
+        if(note.x<pageMin||note.x>pageMax)return;
+        const x=Math.round(note.x-pageOffset);
         if(!columns.has(x))columns.set(x,[]);
         columns.get(x).push({note,state});
       };
@@ -177,14 +208,15 @@
       [...columns.entries()].sort((a,b)=>a[0]-b[0]).forEach(([x,entries])=>{
         html+=renderColumnMarkup(entries,x,EDITOR);
       });
-      if(!events.length&&!draftNotes.length&&!selectedNote){
-        html+=`<text class="staff-hint" x="${STAFF.viewW/2}" y="${STAFF.viewH/2}" text-anchor="middle">Drag on either staff to place your first note</text>`;
+      if(!columns.size){
+        html+=`<text class="staff-hint" x="${STAFF.viewW/2}" y="${STAFF.viewH/2}" text-anchor="middle">${editorPageIndex===0?'Drag on either staff to place your first note':'Place notes on this page'}</text>`;
       }
       svg.innerHTML=html;
-      fitStaffSvg(svg,viewport,contentW,EDITOR);
+      fitEditorStaffSvg(svg,viewport,EDITOR);
       $('addBtn').disabled=draftNotes.length===0;
       $('clearNotesBtn').disabled=events.length===0&&!draftNotes.length;
       $('selectionDot').classList.toggle('ready',draftNotes.length>0||!!selectedNote);
+      updateEditorPageNav();
     }
     function svgPoint(event, svg=$('composerStaff')) {
       const rect=svg.getBoundingClientRect();
@@ -207,7 +239,9 @@
       const clef=Math.abs(point.y-(EDITOR.treble.top+EDITOR.treble.bottom)/2)<=Math.abs(point.y-(EDITOR.bass.top+EDITOR.bass.bottom)/2)?'treble':'bass';
       const staffBottom=EDITOR[clef].bottom;
       const step=Math.max(-8,Math.min(17,Math.round((staffBottom-point.y)/EDITOR.stepY)));
-      const x=nearestColumnX(Math.max(COLUMN_START,point.x));
+      const pageOffset=editorPageOffset();
+      const localX=Math.max(COLUMN_START,Math.min(COLUMN_START+(PAGE_SLOTS-1)*COLUMN_GAP,point.x));
+      const x=nearestColumnX(pageOffset+localX);
       const note=noteFromStep(clef,step,Number($('accidentalSelect').value),x);
       if(note.midi<21||note.midi>108){showToast('That note is outside the piano keyboard range.');return null;}
       return note;
@@ -255,11 +289,8 @@
       events=events.filter(ev=>ev.notes.length).sort((a,b)=>a.x-b.x);
       draftNotes=[];selectedNote=null;selectedHit=null;
       resetPractice();drawEditorStaff();renderPracticeStaff();
-      $('editorHint').textContent='Notes added. Keep building, or start playing the sequence.';
+      $('editorHint').textContent='Notes added. Use the arrows to move between staff pages, or start playing the sequence.';
       showToast('Notes added to the grand staff.');
-      requestAnimationFrame(()=>{
-        const v=$('composerViewport');v.scrollLeft=Math.max(0,v.scrollWidth-v.clientWidth);
-      });
     }
     function removeNoteHit(hit) {
       if(isPractising)stopPractice(false);
@@ -515,6 +546,8 @@
     composerSurface.addEventListener('pointercancel',event=>finishEditorPointer(event,true));
     composerSurface.addEventListener('lostpointercapture',event=>finishEditorPointer(event,true));
 
+    $('composerPrevPage').addEventListener('click',()=>changeEditorPage(-1));
+    $('composerNextPage').addEventListener('click',()=>changeEditorPage(1));
     $('accidentalSelect').addEventListener('change',()=>{
       if(selectedNote)selectedNote.accidental=Number($('accidentalSelect').value);
       drawEditorStaff();
@@ -522,7 +555,7 @@
     $('addBtn').addEventListener('click',addDraftNotes);
     $('clearNotesBtn').addEventListener('click',()=>{
       if(isPractising)stopPractice(false);
-      events=[];draftNotes=[];selectedNote=null;selectedHit=null;
+      events=[];draftNotes=[];selectedNote=null;selectedHit=null;editorPageIndex=0;
       resetPractice();drawEditorStaff();renderPracticeStaff();
       $('editorHint').textContent='Staff cleared. Drag on either clef to start again.';
     });
